@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ELIGIBILITY_WORKER
+  SUPERVISOR
+  ADMIN
+}
+
+enum CaseStatus {
+  PENDING_REVIEW
+  IN_REVIEW
+  PENDING_VERIFICATION
+  APPROVED
+  DENIED
+  WITHDRAWN
+  CLOSED
+}
+
+enum Priority {
+  EXPEDITED
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum DocumentType {
+  IDENTITY
+  INCOME_PAYSTUB
+  INCOME_TAX_RETURN
+  INCOME_SELF_EMPLOYMENT
+  RESIDENCY_UTILITY
+  RESIDENCY_LEASE
+  ASSETS_BANK_STATEMENT
+  CITIZENSHIP
+  IMMIGRATION
+  EXPENSES_MEDICAL
+  EXPENSES_CHILDCARE
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  VERIFIED
+  REJECTED
+  NEEDS_REPLACEMENT
+}
+
+enum EligibilityResult {
+  ELIGIBLE
+  INELIGIBLE
+  EXPEDITED_ELIGIBLE
+  PENDING_VERIFICATION
+  NEEDS_REVIEW
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role      @default(ELIGIBILITY_WORKER)
+  county       String    @default("Cumberland")
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assignedCases SnapCase[] @relation("AssignedWorker")
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model SnapCase {
+  id                    String            @id @default(uuid())
+  caseNumber            String            @unique
+  applicantFirstName    String
+  applicantLastName     String
+  applicantDob          DateTime
+  applicantSsn          String            // encrypted in practice
+  phone                 String?
+  email                 String?
+  address               String
+  city                  String
+  state                 String            @default("NC")
+  zipCode               String
+
+  householdSize         Int
+  monthlyGrossIncome    Float
+  monthlyNetIncome      Float
+  assets                Float             @default(0)
+  hasElderly            Boolean           @default(false)
+  hasDisabled           Boolean           @default(false)
+  isHomeless            Boolean           @default(false)
+  isMigrantWorker       Boolean           @default(false)
+
+  status                CaseStatus        @default(PENDING_REVIEW)
+  priority              Priority          @default(NORMAL)
+  eligibilityResult     EligibilityResult?
+  estimatedBenefit      Float?
+  denialReason          String?
+  notes                 String?
+
+  applicationDate       DateTime          @default(now())
+  dueDate               DateTime          // 30-day deadline (7-day if expedited)
+  reviewStartedAt       DateTime?
+  decisionMadeAt        DateTime?
+  processingDays        Int?
+
+  aiScreeningScore      Float?            // 0-100 confidence score
+  aiScreeningNotes      String?
+  aiScreenedAt          DateTime?
+
+  assignedWorkerId      String?
+  assignedWorker        User?             @relation("AssignedWorker", fields: [assignedWorkerId], references: [id])
+
+  documents             Document[]
+  auditLogs             AuditLog[]
+  eligibilityChecks     EligibilityCheck[]
+
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@map("snap_cases")
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  caseId       String
+  case         SnapCase       @relation(fields: [caseId], references: [id])
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  filePath     String
+  type         DocumentType   @default(OTHER)
+  status       DocumentStatus @default(PENDING)
+
+  aiExtractedData Json?       // OCR/AI extracted data
+  aiConfidence    Float?      // 0-1 confidence
+  reviewerNotes   String?
+
+  uploadedAt   DateTime       @default(now())
+  processedAt  DateTime?
+  verifiedAt   DateTime?
+
+  @@map("documents")
+}
+
+model EligibilityCheck {
+  id                    String            @id @default(uuid())
+  caseId                String
+  case                  SnapCase          @relation(fields: [caseId], references: [id])
+
+  grossIncomeLimit      Float
+  netIncomeLimit        Float
+  assetLimit            Float
+  grossIncomeActual     Float
+  netIncomeActual       Float
+  assetsActual          Float
+
+  grossIncomePass       Boolean
+  netIncomePass         Boolean
+  assetPass             Boolean
+  categoricalEligible   Boolean           @default(false)
+  expeditedEligible     Boolean           @default(false)
+
+  result                EligibilityResult
+  estimatedMonthlyBenefit Float?
+  maxAllotment          Float
+  netIncomeDeductions   Json              // itemized deductions applied
+
+  povertyLevel          Float             // FPL percentage
+  checkedAt             DateTime          @default(now())
+  checkedBy             String            // "AI" or user ID
+
+  @@map("eligibility_checks")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  caseId    String?
+  case      SnapCase? @relation(fields: [caseId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
