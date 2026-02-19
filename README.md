@@ -163,16 +163,90 @@ SNAP-AI is built to help counties **clear Supplemental Nutrition Assistance Prog
 
 ## 🛠️ Technology Stack
 
-*(To be populated with specific technical architecture)*
+| Layer | Technology |
+|-------|-----------|
+| Backend API | Node.js + Express + TypeScript |
+| Database | PostgreSQL + Prisma ORM |
+| AI Engine | Anthropic Claude API (`claude-opus-4-6`) |
+| Frontend | React 18 + TypeScript + Vite |
+| Styling | Tailwind CSS |
+| Charts | Recharts |
+| Auth | JWT (RS256 in production) |
 
-### Anticipated Core Components
-- Document OCR and classification
-- Natural Language Processing (NLP)
-- Rules engine for eligibility determination
-- Integration with state SNAP systems (NC FAST, etc.)
-- Secure API layer
-- Cloud-based infrastructure
-- Real-time analytics dashboard
+### Developer Setup
+
+**Prerequisites:** Node.js 20+, PostgreSQL 15+, Anthropic API key
+
+```bash
+# Install all dependencies
+npm install && cd backend && npm install && cd ../frontend && npm install && cd ..
+
+# Configure environment
+cp .env.example .env
+# Set DATABASE_URL and ANTHROPIC_API_KEY in .env
+
+# Set up database
+cd backend
+npm run db:generate   # generate Prisma client
+npm run db:migrate    # create tables
+npm run db:seed       # load demo users + 5 sample cases
+cd ..
+
+# Start development (backend :3001, frontend :3000)
+npm run dev
+```
+
+**Demo login credentials:**
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@cumberland.nc.gov | Password123! |
+| Supervisor | supervisor@cumberland.nc.gov | Password123! |
+| Worker | worker1@cumberland.nc.gov | Password123! |
+
+### Project Structure
+
+```
+snap-timeliness-ai/
+├── backend/src/
+│   ├── services/
+│   │   ├── eligibilityEngine.ts   # 7 CFR Part 273 rules engine
+│   │   ├── casePrioritizer.ts     # Urgency scoring (0-100)
+│   │   ├── aiService.ts           # Claude API integration
+│   │   └── documentProcessor.ts  # File upload pipeline
+│   ├── routes/
+│   │   ├── cases.ts               # CRUD + AI screen + decisions
+│   │   ├── documents.ts           # Upload + AI processing
+│   │   ├── eligibility.ts         # Standalone checks + guidelines
+│   │   ├── reports.ts             # Timeliness + workload reports
+│   │   └── users.ts               # Worker management (admin)
+│   └── prisma/schema.prisma       # Full database schema
+└── frontend/src/
+    ├── pages/
+    │   ├── Dashboard.tsx          # Stats + expedited alerts
+    │   ├── Cases.tsx              # Filterable case list
+    │   ├── CaseDetail.tsx         # Full case + document upload
+    │   ├── NewCase.tsx            # Application intake + AI screen
+    │   ├── EligibilityChecker.tsx # Standalone calculator
+    │   └── Reports.tsx            # Compliance analytics
+    └── services/api.ts            # Axios API client
+```
+
+### API Overview
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/auth/login` | POST | Login → JWT |
+| `/api/cases` | GET/POST | List / create cases |
+| `/api/cases/stats/overview` | GET | Dashboard stats |
+| `/api/cases/:id` | GET | Case detail |
+| `/api/cases/:id/assign` | PATCH | Assign to worker |
+| `/api/cases/:id/decision` | PATCH | Record decision |
+| `/api/cases/:id/ai-screen` | POST | Trigger AI screening |
+| `/api/documents/upload/:id` | POST | Upload document |
+| `/api/eligibility/check` | POST | Standalone eligibility check |
+| `/api/reports/timeliness` | GET | Federal compliance rates |
+| `/api/users` | GET/POST | Worker management |
 
 ---
 

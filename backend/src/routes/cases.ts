@@ -50,6 +50,39 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   res.json({ cases, total, page: pageNum, limit: limitNum, pages: Math.ceil(total / limitNum) })
 })
 
+// GET /api/cases/stats/overview — dashboard stats
+// NOTE: must be registered before /:id to avoid Express matching "stats" as an ID
+router.get('/stats/overview', async (_req: AuthenticatedRequest, res: Response) => {
+  const [
+    total,
+    pending,
+    expedited,
+    approved,
+    denied,
+    overdue,
+    avgProcessingDays,
+  ] = await Promise.all([
+    prisma.snapCase.count(),
+    prisma.snapCase.count({ where: { status: 'PENDING_REVIEW' } }),
+    prisma.snapCase.count({ where: { priority: 'EXPEDITED' } }),
+    prisma.snapCase.count({ where: { status: 'APPROVED' } }),
+    prisma.snapCase.count({ where: { status: 'DENIED' } }),
+    prisma.snapCase.count({ where: { dueDate: { lt: new Date() }, status: { in: ['PENDING_REVIEW', 'IN_REVIEW', 'PENDING_VERIFICATION'] } } }),
+    prisma.snapCase.aggregate({ _avg: { processingDays: true }, where: { processingDays: { not: null } } }),
+  ])
+
+  res.json({
+    total,
+    pending,
+    expedited,
+    approved,
+    denied,
+    overdue,
+    avgProcessingDays: Math.round(avgProcessingDays._avg.processingDays ?? 0),
+    timelinessRate: total > 0 ? Math.round(((total - overdue) / total) * 100) : 100,
+  })
+})
+
 // GET /api/cases/:id — get a single case
 router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
   const snapCase = await prisma.snapCase.findUnique({
@@ -284,38 +317,6 @@ router.post('/:id/ai-screen', async (req: AuthenticatedRequest, res: Response) =
   })
 
   res.json(screening)
-})
-
-// GET /api/cases/stats/overview — dashboard stats
-router.get('/stats/overview', async (_req: AuthenticatedRequest, res: Response) => {
-  const [
-    total,
-    pending,
-    expedited,
-    approved,
-    denied,
-    overdue,
-    avgProcessingDays,
-  ] = await Promise.all([
-    prisma.snapCase.count(),
-    prisma.snapCase.count({ where: { status: 'PENDING_REVIEW' } }),
-    prisma.snapCase.count({ where: { priority: 'EXPEDITED' } }),
-    prisma.snapCase.count({ where: { status: 'APPROVED' } }),
-    prisma.snapCase.count({ where: { status: 'DENIED' } }),
-    prisma.snapCase.count({ where: { dueDate: { lt: new Date() }, status: { in: ['PENDING_REVIEW', 'IN_REVIEW', 'PENDING_VERIFICATION'] } } }),
-    prisma.snapCase.aggregate({ _avg: { processingDays: true }, where: { processingDays: { not: null } } }),
-  ])
-
-  res.json({
-    total,
-    pending,
-    expedited,
-    approved,
-    denied,
-    overdue,
-    avgProcessingDays: Math.round(avgProcessingDays._avg.processingDays ?? 0),
-    timelinessRate: total > 0 ? Math.round(((total - overdue) / total) * 100) : 100,
-  })
 })
 
 export default router

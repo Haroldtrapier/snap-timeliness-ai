@@ -129,6 +129,12 @@ model SnapCase {
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@index([assignedWorkerId])
+  @@index([applicationDate])
+  @@index([decisionMadeAt])
   @@map("snap_cases")
 }
 

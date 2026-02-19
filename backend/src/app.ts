@@ -9,6 +9,7 @@ import casesRoutes from './routes/cases'
 import documentsRoutes from './routes/documents'
 import eligibilityRoutes from './routes/eligibility'
 import reportsRoutes from './routes/reports'
+import usersRoutes from './routes/users'
 import { errorHandler, notFound } from './middleware/errorHandler'
 
 const app = express()
@@ -45,6 +46,7 @@ app.use('/api/cases', casesRoutes)
 app.use('/api/documents', documentsRoutes)
 app.use('/api/eligibility', eligibilityRoutes)
 app.use('/api/reports', reportsRoutes)
+app.use('/api/users', usersRoutes)
 
 // 404 + error handling
 app.use(notFound)

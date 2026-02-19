@@ -62,6 +62,12 @@ export const eligibilityApi = {
   guidelines: () => api.get('/eligibility/guidelines'),
 }
 
+export const usersApi = {
+  list: () => api.get<import('../types').User[]>('/users'),
+  create: (data: Record<string, string>) => api.post('/users', data),
+  deactivate: (id: string) => api.patch(`/users/${id}/deactivate`),
+}
+
 export const reportsApi = {
   timeliness: () => api.get<import('../types').TimelinessReport>('/reports/timeliness'),
   workload: () => api.get('/reports/workload'),
