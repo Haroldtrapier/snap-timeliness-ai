@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Brain, CheckCircle2, Upload, FileText,
-  AlertTriangle, User, Home, DollarSign
+  AlertTriangle, User, Home, DollarSign, UserCheck
 } from 'lucide-react'
-import { casesApi, documentsApi } from '../services/api'
+import { casesApi, documentsApi, usersApi } from '../services/api'
 import { StatusBadge, PriorityBadge, EligibilityBadge, DocumentStatusBadge } from '../components/Badges'
+import { useToast } from '../components/Toast'
+import type { User as UserType } from '../types'
 
 const DOC_TYPES = [
   'IDENTITY', 'INCOME_PAYSTUB', 'INCOME_TAX_RETURN', 'RESIDENCY_UTILITY',
@@ -23,14 +25,29 @@ function InfoRow({ label, value }: { label: string; value: string | number | boo
   )
 }
 
+function currentUserRole(): string {
+  try {
+    const u = JSON.parse(localStorage.getItem('user') ?? '{}') as { role?: string }
+    return u.role ?? ''
+  } catch {
+    return ''
+  }
+}
+
 export default function CaseDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { toast } = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
+
   const [docType, setDocType] = useState('OTHER')
   const [decision, setDecision] = useState('')
   const [denialReason, setDenialReason] = useState('')
+  const [selectedWorkerId, setSelectedWorkerId] = useState('')
+
+  const role = currentUserRole()
+  const isSupervisor = role === 'SUPERVISOR' || role === 'ADMIN'
 
   const { data: snapCase, isLoading } = useQuery({
     queryKey: ['case', id],
@@ -38,19 +55,57 @@ export default function CaseDetailPage() {
     enabled: !!id,
   })
 
+  const { data: workers } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => usersApi.list().then(r => r.data),
+    enabled: isSupervisor,
+  })
+
   const screenMutation = useMutation({
     mutationFn: () => casesApi.aiScreen(id!),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['case', id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', id] })
+      toast('AI screening complete')
+    },
+    onError: () => toast('AI screening failed', 'error'),
+  })
+
+  const assignMutation = useMutation({
+    mutationFn: () => casesApi.assign(id!, selectedWorkerId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', id] })
+      toast('Case assigned successfully')
+      setSelectedWorkerId('')
+    },
+    onError: () => toast('Assignment failed', 'error'),
   })
 
   const decisionMutation = useMutation({
     mutationFn: () => casesApi.decision(id!, { decision, denialReason }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['case', id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', id] })
+      toast(`Case marked as ${decision.toLowerCase()}`)
+    },
+    onError: () => toast('Failed to record decision', 'error'),
   })
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => documentsApi.upload(id!, file, docType),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['case', id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', id] })
+      toast('Document uploaded and queued for AI processing')
+    },
+    onError: () => toast('Upload failed — check file type and size', 'error'),
+  })
+
+  const verifyDocMutation = useMutation({
+    mutationFn: ({ docId, status }: { docId: string; status: string }) =>
+      documentsApi.verify(docId, status),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', id] })
+      toast('Document status updated')
+    },
+    onError: () => toast('Failed to update document', 'error'),
   })
 
   if (isLoading) return <div className="text-center py-20 text-gray-400">Loading case...</div>
@@ -58,6 +113,11 @@ export default function CaseDetailPage() {
 
   const check = snapCase.eligibilityChecks?.[0]
   const daysLeft = Math.ceil((new Date(snapCase.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  const isDecided = ['APPROVED', 'DENIED', 'WITHDRAWN', 'CLOSED'].includes(snapCase.status)
+
+  const eligibleWorkers = (workers ?? []).filter((w: UserType) =>
+    w.role === 'ELIGIBILITY_WORKER' || w.role === 'SUPERVISOR'
+  )
 
   return (
     <div className="space-y-5 max-w-5xl">
@@ -87,6 +147,7 @@ export default function CaseDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left column */}
         <div className="lg:col-span-2 space-y-5">
+
           {/* Applicant info */}
           <div className="card">
             <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -143,9 +204,7 @@ export default function CaseDetailPage() {
                     Est. benefit: <strong>${check.estimatedMonthlyBenefit}/month</strong>
                   </span>
                 )}
-                <span className="text-xs text-gray-400 ml-auto">
-                  {check.povertyLevel}% of FPL
-                </span>
+                <span className="text-xs text-gray-400 ml-auto">{check.povertyLevel}% of FPL</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {[
@@ -155,7 +214,9 @@ export default function CaseDetailPage() {
                 ].map(({ label, limit, actual, pass }) => (
                   <div key={label} className={`rounded-lg p-3 ${pass ? 'bg-green-50 border border-green-100' : 'bg-red-50 border border-red-100'}`}>
                     <div className="text-xs text-gray-500 mb-1">{label}</div>
-                    <div className="text-sm font-semibold">${actual.toLocaleString()} <span className="text-xs font-normal text-gray-400">/ ${limit.toLocaleString()}</span></div>
+                    <div className="text-sm font-semibold">
+                      ${actual.toLocaleString()} <span className="text-xs font-normal text-gray-400">/ ${limit.toLocaleString()}</span>
+                    </div>
                     <div className={`text-xs mt-1 font-medium ${pass ? 'text-green-700' : 'text-red-700'}`}>
                       {pass ? '✓ Pass' : '✗ Fail'}
                     </div>
@@ -182,12 +243,12 @@ export default function CaseDetailPage() {
             ) : (
               <div className="space-y-2 mb-4">
                 {snapCase.documents?.map(doc => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="text-sm font-medium text-gray-800">{doc.originalName}</div>
+                  <div key={doc.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-800 truncate">{doc.originalName}</div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        {doc.type.replace(/_/g, ' ')} &middot; {(doc.fileSize / 1024).toFixed(0)}KB
-                        {doc.aiConfidence && ` · AI confidence: ${Math.round(doc.aiConfidence * 100)}%`}
+                        {doc.type.replace(/_/g, ' ')} · {(doc.fileSize / 1024).toFixed(0)}KB
+                        {doc.aiConfidence != null && ` · AI confidence: ${Math.round(doc.aiConfidence * 100)}%`}
                       </div>
                       {doc.reviewerNotes && (
                         <div className="text-xs text-orange-700 mt-0.5 flex items-center gap-1">
@@ -195,44 +256,100 @@ export default function CaseDetailPage() {
                         </div>
                       )}
                     </div>
-                    <DocumentStatusBadge status={doc.status} />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <DocumentStatusBadge status={doc.status} />
+                      {doc.status === 'PENDING' && isSupervisor && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => verifyDocMutation.mutate({ docId: doc.id, status: 'VERIFIED' })}
+                            className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
+                          >
+                            Verify
+                          </button>
+                          <button
+                            onClick={() => verifyDocMutation.mutate({ docId: doc.id, status: 'REJECTED' })}
+                            className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
 
             {/* Upload */}
-            <div className="border-t border-gray-100 pt-4">
-              <div className="flex gap-2">
-                <select
-                  value={docType}
-                  onChange={e => setDocType(e.target.value)}
-                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-snap-green"
-                >
-                  {DOC_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
-                </select>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png,.tiff"
-                  onChange={e => e.target.files?.[0] && uploadMutation.mutate(e.target.files[0])}
-                />
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploadMutation.isPending}
-                  className="btn-secondary"
-                >
-                  <Upload size={15} />
-                  {uploadMutation.isPending ? 'Uploading...' : 'Upload Document'}
-                </button>
-              </div>
+            <div className="border-t border-gray-100 pt-4 flex gap-2 flex-wrap">
+              <select
+                value={docType}
+                onChange={e => setDocType(e.target.value)}
+                className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-snap-green"
+              >
+                {DOC_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
+              </select>
+              <input
+                ref={fileRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png,.tiff"
+                onChange={e => e.target.files?.[0] && uploadMutation.mutate(e.target.files[0])}
+              />
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadMutation.isPending}
+                className="btn-secondary"
+              >
+                <Upload size={15} />
+                {uploadMutation.isPending ? 'Uploading...' : 'Upload Document'}
+              </button>
             </div>
           </div>
         </div>
 
         {/* Right column */}
         <div className="space-y-5">
+
+          {/* Case Assignment — supervisor/admin only */}
+          {isSupervisor && (
+            <div className="card">
+              <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <UserCheck size={16} className="text-snap-blue" /> Assign Case
+              </h2>
+              {snapCase.assignedWorker ? (
+                <div className="mb-3 text-sm text-gray-600">
+                  Currently assigned to:{' '}
+                  <strong>{snapCase.assignedWorker.firstName} {snapCase.assignedWorker.lastName}</strong>
+                </div>
+              ) : (
+                <div className="mb-3 text-sm text-amber-600">Unassigned</div>
+              )}
+              <div className="space-y-2">
+                <select
+                  value={selectedWorkerId}
+                  onChange={e => setSelectedWorkerId(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-snap-green"
+                >
+                  <option value="">Select a worker...</option>
+                  {eligibleWorkers.map((w: UserType) => (
+                    <option key={w.id} value={w.id}>
+                      {w.firstName} {w.lastName}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  disabled={!selectedWorkerId || assignMutation.isPending}
+                  onClick={() => assignMutation.mutate()}
+                  className="w-full btn-primary justify-center"
+                >
+                  <UserCheck size={15} />
+                  {assignMutation.isPending ? 'Assigning...' : 'Assign'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* AI Screening */}
           <div className="card">
             <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -244,10 +361,12 @@ export default function CaseDetailPage() {
                   <div className="text-3xl font-bold text-gray-900">{snapCase.aiScreeningScore}</div>
                   <div className="text-sm text-gray-500">/ 100<br /><span className="text-xs">approval confidence</span></div>
                 </div>
-                <div className={`h-2 rounded-full mb-3 ${
-                  snapCase.aiScreeningScore >= 70 ? 'bg-green-500' :
-                  snapCase.aiScreeningScore >= 40 ? 'bg-amber-500' : 'bg-red-500'
-                }`} style={{ width: `${snapCase.aiScreeningScore}%` }} />
+                <div className="bg-gray-100 h-2 rounded-full mb-3">
+                  <div
+                    className={`h-2 rounded-full ${snapCase.aiScreeningScore >= 70 ? 'bg-green-500' : snapCase.aiScreeningScore >= 40 ? 'bg-amber-500' : 'bg-red-500'}`}
+                    style={{ width: `${snapCase.aiScreeningScore}%` }}
+                  />
+                </div>
                 {snapCase.aiScreeningNotes && (
                   <p className="text-xs text-gray-600 leading-relaxed">{snapCase.aiScreeningNotes}</p>
                 )}
@@ -264,12 +383,14 @@ export default function CaseDetailPage() {
               className="w-full btn-secondary text-sm"
             >
               <Brain size={15} />
-              {screenMutation.isPending ? 'Screening...' : 'Run AI Screen'}
+              {screenMutation.isPending
+                ? 'Screening...'
+                : snapCase.aiScreeningScore != null ? 'Re-run AI Screen' : 'Run AI Screen'}
             </button>
           </div>
 
           {/* Decision */}
-          {!['APPROVED', 'DENIED', 'WITHDRAWN', 'CLOSED'].includes(snapCase.status) && (
+          {!isDecided && (
             <div className="card">
               <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <CheckCircle2 size={16} className="text-snap-green" /> Record Decision
@@ -305,7 +426,7 @@ export default function CaseDetailPage() {
             </div>
           )}
 
-          {/* Case metadata */}
+          {/* Timeline */}
           <div className="card">
             <h2 className="font-semibold text-gray-900 mb-3">Timeline</h2>
             <div className="space-y-1 text-sm">

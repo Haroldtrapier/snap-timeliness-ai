@@ -1,7 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
-import { CheckCircle2, AlertTriangle, Clock, Users } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Clock, Users, Download } from 'lucide-react'
 import { reportsApi } from '../services/api'
+
+function downloadCSV(filename: string, rows: string[][]): void {
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 const COLORS = ['#2D7D46', '#1565C0', '#E65100', '#9C27B0', '#757575', '#F44336']
 
@@ -40,11 +51,39 @@ export default function ReportsPage() {
   const trends = (trendsData as { trends: Record<string, unknown>[] })?.trends ?? []
   const pipeline = (pipelineData as { pipeline: { status: string; count: number }[] })?.pipeline ?? []
 
+  const exportTimeliness = () => {
+    if (!timeliness) return
+    downloadCSV(`timeliness-report-${new Date().toISOString().split('T')[0]}.csv`, [
+      ['Report', 'Period', 'Total Cases', 'Timely Cases', 'Rate (%)', 'Federal Standard (%)'],
+      ['Standard (30-day)', timeliness.period, String(timeliness.standard.total), String(timeliness.standard.timely), String(timeliness.standard.rate), String(timeliness.standard.federalStandard)],
+      ['Expedited (7-day)', timeliness.period, String(timeliness.expedited.total), String(timeliness.expedited.timely), String(timeliness.expedited.rate), String(timeliness.expedited.federalStandard)],
+    ])
+  }
+
+  const exportWorkload = () => {
+    const rows = workload as Record<string, unknown>[]
+    if (!rows.length) return
+    downloadCSV(`workload-report-${new Date().toISOString().split('T')[0]}.csv`, [
+      ['Worker', 'Active Cases', 'Expedited Cases', 'Overdue Cases'],
+      ...rows.map(w => [String(w.name), String(w.activeCases), String(w.expeditedCases), String(w.overdueCount)]),
+    ])
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">Reports & Analytics</h1>
-        <p className="text-sm text-gray-500">Federal compliance and performance metrics — Last 30 days</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Reports & Analytics</h1>
+          <p className="text-sm text-gray-500">Federal compliance and performance metrics — Last 30 days</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={exportTimeliness} disabled={!timeliness} className="btn-secondary text-xs py-1.5">
+            <Download size={14} /> Export Timeliness CSV
+          </button>
+          <button onClick={exportWorkload} disabled={!workload.length} className="btn-secondary text-xs py-1.5">
+            <Download size={14} /> Export Workload CSV
+          </button>
+        </div>
       </div>
 
       {/* Federal compliance */}

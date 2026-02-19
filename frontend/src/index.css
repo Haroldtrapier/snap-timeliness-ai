@@ -8,6 +8,15 @@
   }
 }
 
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.2s ease-out;
+}
+
 @layer components {
   .btn-primary {
     @apply inline-flex items-center gap-2 rounded-md bg-snap-green px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-snap-green-dark focus:outline-none focus:ring-2 focus:ring-snap-green focus:ring-offset-2 transition-colors;

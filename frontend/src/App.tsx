@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { ToastProvider } from './components/Toast'
 import Layout from './components/Layout'
 import LoginPage from './pages/Login'
 import DashboardPage from './pages/Dashboard'
@@ -37,28 +38,30 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <Layout user={user} onLogout={handleLogout}>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/cases" element={<CasesPage />} />
-                  <Route path="/cases/new" element={<NewCasePage />} />
-                  <Route path="/cases/:id" element={<CaseDetailPage />} />
-                  <Route path="/reports" element={<ReportsPage />} />
-                  <Route path="/eligibility-checker" element={<EligibilityCheckerPage />} />
-                </Routes>
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <Layout user={user} onLogout={handleLogout}>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/cases" element={<CasesPage />} />
+                    <Route path="/cases/new" element={<NewCasePage />} />
+                    <Route path="/cases/:id" element={<CaseDetailPage />} />
+                    <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/eligibility-checker" element={<EligibilityCheckerPage />} />
+                  </Routes>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   )
 }
