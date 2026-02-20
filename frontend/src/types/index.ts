@@ -11,6 +11,7 @@ export interface User {
   lastName: string
   role: Role
   county: string
+  _count?: { assignedCases: number }
 }
 
 export interface SnapCase {

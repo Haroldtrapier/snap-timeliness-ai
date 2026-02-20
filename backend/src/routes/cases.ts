@@ -8,6 +8,7 @@ import { determineEligibility } from '../services/eligibilityEngine'
 import { scoreCase } from '../services/casePrioritizer'
 import { screenApplication } from '../services/aiService'
 import { getDocumentSummary } from '../services/documentProcessor'
+import { encrypt, maskSsn } from '../services/encryption'
 
 const router = Router()
 router.use(authenticate)
@@ -100,7 +101,8 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
     return
   }
 
-  res.json(snapCase)
+  // Return masked SSN — full value is never exposed via API
+  res.json({ ...snapCase, applicantSsn: maskSsn(snapCase.applicantSsn) })
 })
 
 // POST /api/cases — create a new case
@@ -165,7 +167,7 @@ router.post(
         applicantFirstName: data.applicantFirstName,
         applicantLastName: data.applicantLastName,
         applicantDob: new Date(data.applicantDob),
-        applicantSsn: data.applicantSsn,
+        applicantSsn: encrypt(data.applicantSsn),
         phone: data.phone,
         email: data.email,
         address: data.address,

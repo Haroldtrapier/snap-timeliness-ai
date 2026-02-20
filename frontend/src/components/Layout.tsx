@@ -1,16 +1,17 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, BarChart3, Calculator,
-  LogOut, Menu, X, Bell, ChevronRight
+  LogOut, Menu, X, Bell, ChevronRight, Users
 } from 'lucide-react'
 import { useState } from 'react'
 import type { User } from '../types'
 
-const NAV = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/cases', label: 'Cases', icon: FolderOpen },
-  { path: '/eligibility-checker', label: 'Eligibility Check', icon: Calculator },
-  { path: '/reports', label: 'Reports', icon: BarChart3 },
+const NAV: { path: string; label: string; icon: React.ComponentType<{ size: number }>; roles: string[] | null }[] = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: null },
+  { path: '/cases', label: 'Cases', icon: FolderOpen, roles: null },
+  { path: '/eligibility-checker', label: 'Eligibility Check', icon: Calculator, roles: null },
+  { path: '/reports', label: 'Reports', icon: BarChart3, roles: null },
+  { path: '/users', label: 'Staff', icon: Users, roles: ['SUPERVISOR', 'ADMIN'] },
 ]
 
 interface LayoutProps {
@@ -40,7 +41,7 @@ export default function Layout({ user, onLogout, children }: LayoutProps) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {NAV.map(({ path, label, icon: Icon }) => (
+        {NAV.filter(n => !n.roles || (user && n.roles.includes(user.role))).map(({ path, label, icon: Icon }) => (
           <Link
             key={path}
             to={path}

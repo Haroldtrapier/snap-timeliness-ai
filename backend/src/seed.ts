@@ -7,6 +7,7 @@ import 'dotenv/config'
 import prisma from './config/database'
 import { determineEligibility } from './services/eligibilityEngine'
 import { scoreCase } from './services/casePrioritizer'
+import { encrypt } from './services/encryption'
 
 const WORKERS = [
   { email: 'admin@cumberland.nc.gov', firstName: 'Admin', lastName: 'User', role: 'ADMIN' as const },
@@ -96,7 +97,7 @@ async function seed() {
         applicantFirstName: c.applicantFirstName,
         applicantLastName: c.applicantLastName,
         applicantDob: new Date('1985-01-01'),
-        applicantSsn: '000-00-0001',
+        applicantSsn: encrypt('000-00-0001'),
         address: '123 Main St',
         city: 'Fayetteville',
         state: 'NC',

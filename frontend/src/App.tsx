@@ -9,6 +9,7 @@ import CaseDetailPage from './pages/CaseDetail'
 import NewCasePage from './pages/NewCase'
 import ReportsPage from './pages/Reports'
 import EligibilityCheckerPage from './pages/EligibilityChecker'
+import UsersPage from './pages/Users'
 import type { User } from './types'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -55,6 +56,7 @@ export default function App() {
                     <Route path="/cases/:id" element={<CaseDetailPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/eligibility-checker" element={<EligibilityCheckerPage />} />
+                    <Route path="/users" element={<UsersPage />} />
                   </Routes>
                 </Layout>
               </ProtectedRoute>
