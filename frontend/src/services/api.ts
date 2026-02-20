@@ -29,6 +29,9 @@ export const authApi = {
   login: (email: string, password: string) =>
     api.post<{ token: string; user: import('../types').User }>('/auth/login', { email, password }),
   me: () => api.get<import('../types').User>('/auth/me'),
+  forgotPassword: (email: string) => api.post<{ message: string }>('/auth/forgot-password', { email }),
+  resetPassword: (token: string, password: string) =>
+    api.post<{ message: string }>('/auth/reset-password', { token, password }),
 }
 
 export const casesApi = {
@@ -55,6 +58,7 @@ export const documentsApi = {
   listForCase: (caseId: string) => api.get<import('../types').Document[]>(`/documents/case/${caseId}`),
   verify: (id: string, status: string, notes?: string) =>
     api.patch(`/documents/${id}/verify`, { status, reviewerNotes: notes }),
+  download: (id: string) => api.get(`/documents/${id}/file`, { responseType: 'blob' }),
 }
 
 export const eligibilityApi = {

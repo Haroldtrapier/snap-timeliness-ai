@@ -10,6 +10,8 @@ import NewCasePage from './pages/NewCase'
 import ReportsPage from './pages/Reports'
 import EligibilityCheckerPage from './pages/EligibilityChecker'
 import UsersPage from './pages/Users'
+import ForgotPasswordPage from './pages/ForgotPassword'
+import ResetPasswordPage from './pages/ResetPassword'
 import type { User } from './types'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -43,6 +45,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
             path="/*"
             element={

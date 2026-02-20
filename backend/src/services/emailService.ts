@@ -145,3 +145,45 @@ export async function sendSupervisorDailySummary(p: SupervisorSummaryPayload): P
 
   await transporter.sendMail({ from: FROM, to: p.supervisorEmail, subject, html })
 }
+
+export interface PasswordResetPayload {
+  to: string
+  name: string
+  resetUrl: string
+  expiresInMinutes: number
+}
+
+export async function sendPasswordResetEmail(p: PasswordResetPayload): Promise<void> {
+  const subject = 'SNAP-AI — Password Reset Request'
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #16a34a; padding: 20px; border-radius: 8px 8px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 18px;">Password Reset Request</h1>
+      </div>
+      <div style="background: #f9fafb; padding: 24px; border: 1px solid #e5e7eb; border-top: 0; border-radius: 0 0 8px 8px;">
+        <p style="color: #374151; margin-top: 0;">Hi ${p.name},</p>
+        <p style="color: #374151;">
+          We received a request to reset the password for your SNAP-AI account.
+          Click the button below to choose a new password.
+          This link will expire in <strong>${p.expiresInMinutes} minutes</strong>.
+        </p>
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${p.resetUrl}"
+             style="display: inline-block; background: #16a34a; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px;">
+            Reset My Password →
+          </a>
+        </div>
+        <p style="color: #6b7280; font-size: 13px;">
+          If you didn't request a password reset, you can safely ignore this email. Your password will not change.
+        </p>
+        <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+          Cumberland County DSS — SNAP-AI Case Management System<br/>
+          This is an automated message — do not reply.
+        </p>
+      </div>
+    </div>
+  `
+
+  await transporter.sendMail({ from: FROM, to: p.to, subject, html })
+}

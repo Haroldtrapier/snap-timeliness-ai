@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Brain, CheckCircle2, Upload, FileText,
-  AlertTriangle, User, Home, DollarSign, UserCheck, MessageSquare, Trash2, Send
+  AlertTriangle, User, Home, DollarSign, UserCheck, MessageSquare, Trash2, Send, Eye, X as XIcon
 } from 'lucide-react'
 import { casesApi, documentsApi, usersApi, notesApi } from '../services/api'
 import { StatusBadge, PriorityBadge, EligibilityBadge, DocumentStatusBadge } from '../components/Badges'
@@ -46,6 +46,22 @@ export default function CaseDetailPage() {
   const [denialReason, setDenialReason] = useState('')
   const [selectedWorkerId, setSelectedWorkerId] = useState('')
   const [noteBody, setNoteBody] = useState('')
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; mimeType: string } | null>(null)
+
+  const handleViewDoc = async (docId: string, name: string, mimeType: string) => {
+    try {
+      const { data: blob } = await documentsApi.download(docId)
+      const url = URL.createObjectURL(blob as Blob)
+      setViewerDoc({ url, name, mimeType })
+    } catch {
+      toast('Could not load document', 'error')
+    }
+  }
+
+  const closeViewer = () => {
+    if (viewerDoc) URL.revokeObjectURL(viewerDoc.url)
+    setViewerDoc(null)
+  }
 
   const role = currentUserRole()
   const isSupervisor = role === 'SUPERVISOR' || role === 'ADMIN'
@@ -283,6 +299,13 @@ export default function CaseDetailPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleViewDoc(doc.id, doc.originalName, doc.mimeType)}
+                        className="text-gray-400 hover:text-snap-green transition-colors"
+                        title="View document"
+                      >
+                        <Eye size={15} />
+                      </button>
                       <DocumentStatusBadge status={doc.status} />
                       {doc.status === 'PENDING' && isSupervisor && (
                         <div className="flex gap-1">
@@ -542,5 +565,39 @@ export default function CaseDetailPage() {
         </div>
       </div>
     </div>
+
+    {/* Document viewer modal */}
+    {viewerDoc && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-4xl" style={{ height: '90vh' }}>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 shrink-0">
+            <span className="font-medium text-gray-900 text-sm truncate max-w-xs">{viewerDoc.name}</span>
+            <button
+              onClick={closeViewer}
+              className="text-gray-400 hover:text-gray-700 transition-colors ml-4"
+            >
+              <XIcon size={20} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden rounded-b-2xl">
+            {viewerDoc.mimeType.startsWith('image/') ? (
+              <div className="h-full flex items-center justify-center bg-gray-100 p-4">
+                <img
+                  src={viewerDoc.url}
+                  alt={viewerDoc.name}
+                  className="max-h-full max-w-full object-contain rounded"
+                />
+              </div>
+            ) : (
+              <iframe
+                src={viewerDoc.url}
+                title={viewerDoc.name}
+                className="w-full h-full border-0"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    )}
   )
 }

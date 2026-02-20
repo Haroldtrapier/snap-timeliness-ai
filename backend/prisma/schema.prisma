@@ -73,6 +73,9 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  resetToken          String?   @unique
+  resetTokenExpiresAt DateTime?
+
   assignedCases SnapCase[] @relation("AssignedWorker")
   auditLogs     AuditLog[]
   caseNotes     CaseNote[] @relation("NoteAuthor")

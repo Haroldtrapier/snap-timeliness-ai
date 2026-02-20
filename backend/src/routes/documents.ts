@@ -88,6 +88,25 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
   res.json(doc)
 })
 
+// GET /api/documents/:id/file — stream the file (authenticated)
+router.get('/:id/file', async (req: AuthenticatedRequest, res: Response) => {
+  const doc = await prisma.document.findUnique({ where: { id: req.params.id } })
+  if (!doc) {
+    res.status(404).json({ error: 'Document not found' })
+    return
+  }
+
+  if (!fs.existsSync(doc.filePath)) {
+    res.status(404).json({ error: 'File not found on disk' })
+    return
+  }
+
+  res.setHeader('Content-Type', doc.mimeType)
+  res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.originalName)}"`)
+  res.setHeader('Content-Length', doc.fileSize)
+  fs.createReadStream(doc.filePath).pipe(res)
+})
+
 // PATCH /api/documents/:id/verify
 router.patch('/:id/verify', async (req: AuthenticatedRequest, res: Response) => {
   const { status, reviewerNotes } = req.body
