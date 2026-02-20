@@ -8,6 +8,7 @@ import authRoutes from './routes/auth'
 import casesRoutes from './routes/cases'
 import documentsRoutes from './routes/documents'
 import eligibilityRoutes from './routes/eligibility'
+import notesRoutes from './routes/notes'
 import reportsRoutes from './routes/reports'
 import usersRoutes from './routes/users'
 import { errorHandler, notFound } from './middleware/errorHandler'
@@ -43,6 +44,7 @@ app.get('/health', (_req, res) => {
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/cases', casesRoutes)
+app.use('/api/cases/:caseId/notes', notesRoutes)
 app.use('/api/documents', documentsRoutes)
 app.use('/api/eligibility', eligibilityRoutes)
 app.use('/api/reports', reportsRoutes)

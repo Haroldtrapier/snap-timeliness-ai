@@ -86,6 +86,16 @@ export interface EligibilityCheck {
   checkedAt: string
 }
 
+export interface CaseNote {
+  id: string
+  caseId: string
+  authorId: string
+  author: { id: string; firstName: string; lastName: string; role: Role }
+  body: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface DashboardStats {
   total: number
   pending: number

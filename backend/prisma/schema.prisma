@@ -75,6 +75,7 @@ model User {
 
   assignedCases SnapCase[] @relation("AssignedWorker")
   auditLogs     AuditLog[]
+  caseNotes     CaseNote[] @relation("NoteAuthor")
 
   @@map("users")
 }
@@ -125,6 +126,7 @@ model SnapCase {
   documents             Document[]
   auditLogs             AuditLog[]
   eligibilityChecks     EligibilityCheck[]
+  caseNotes             CaseNote[]
 
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
@@ -189,6 +191,20 @@ model EligibilityCheck {
   checkedBy             String            // "AI" or user ID
 
   @@map("eligibility_checks")
+}
+
+model CaseNote {
+  id        String   @id @default(uuid())
+  caseId    String
+  case      SnapCase @relation(fields: [caseId], references: [id])
+  authorId  String
+  author    User     @relation("NoteAuthor", fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([caseId])
+  @@map("case_notes")
 }
 
 model AuditLog {

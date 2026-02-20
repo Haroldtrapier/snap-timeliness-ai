@@ -3,12 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Brain, CheckCircle2, Upload, FileText,
-  AlertTriangle, User, Home, DollarSign, UserCheck
+  AlertTriangle, User, Home, DollarSign, UserCheck, MessageSquare, Trash2, Send
 } from 'lucide-react'
-import { casesApi, documentsApi, usersApi } from '../services/api'
+import { casesApi, documentsApi, usersApi, notesApi } from '../services/api'
 import { StatusBadge, PriorityBadge, EligibilityBadge, DocumentStatusBadge } from '../components/Badges'
 import { useToast } from '../components/Toast'
-import type { User as UserType } from '../types'
+import type { User as UserType, CaseNote } from '../types'
 
 const DOC_TYPES = [
   'IDENTITY', 'INCOME_PAYSTUB', 'INCOME_TAX_RETURN', 'RESIDENCY_UTILITY',
@@ -45,6 +45,7 @@ export default function CaseDetailPage() {
   const [decision, setDecision] = useState('')
   const [denialReason, setDenialReason] = useState('')
   const [selectedWorkerId, setSelectedWorkerId] = useState('')
+  const [noteBody, setNoteBody] = useState('')
 
   const role = currentUserRole()
   const isSupervisor = role === 'SUPERVISOR' || role === 'ADMIN'
@@ -106,6 +107,31 @@ export default function CaseDetailPage() {
       toast('Document status updated')
     },
     onError: () => toast('Failed to update document', 'error'),
+  })
+
+  const { data: notes = [] } = useQuery({
+    queryKey: ['notes', id],
+    queryFn: () => notesApi.list(id!).then(r => r.data),
+    enabled: !!id,
+  })
+
+  const addNoteMutation = useMutation({
+    mutationFn: () => notesApi.create(id!, noteBody.trim()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['notes', id] })
+      setNoteBody('')
+      toast('Note added')
+    },
+    onError: () => toast('Failed to add note', 'error'),
+  })
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: string) => notesApi.delete(id!, noteId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['notes', id] })
+      toast('Note deleted')
+    },
+    onError: () => toast('Failed to delete note', 'error'),
   })
 
   if (isLoading) return <div className="text-center py-20 text-gray-400">Loading case...</div>
@@ -304,6 +330,74 @@ export default function CaseDetailPage() {
                 <Upload size={15} />
                 {uploadMutation.isPending ? 'Uploading...' : 'Upload Document'}
               </button>
+            </div>
+          </div>
+
+          {/* Case Notes */}
+          <div className="card">
+            <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <MessageSquare size={16} className="text-snap-green" /> Case Notes
+              <span className="ml-auto text-xs text-gray-400">{notes.length} note{notes.length !== 1 ? 's' : ''}</span>
+            </h2>
+
+            {notes.length === 0 ? (
+              <p className="text-sm text-gray-400 mb-4">No notes yet. Add the first note below.</p>
+            ) : (
+              <div className="space-y-3 mb-4">
+                {notes.map((note: CaseNote) => {
+                  const currentUserId = (() => {
+                    try { return (JSON.parse(localStorage.getItem('user') ?? '{}')).id ?? '' } catch { return '' }
+                  })()
+                  const canDelete = note.authorId === currentUserId || role === 'ADMIN'
+                  return (
+                    <div key={note.id} className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap flex-1 min-w-0">{note.body}</p>
+                        {canDelete && (
+                          <button
+                            onClick={() => deleteNoteMutation.mutate(note.id)}
+                            className="shrink-0 text-gray-300 hover:text-red-500 transition-colors"
+                            title="Delete note"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                      <div className="mt-2 text-xs text-gray-400">
+                        {note.author.firstName} {note.author.lastName}
+                        <span className="mx-1">·</span>
+                        {new Date(note.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="border-t border-gray-100 pt-3">
+              <textarea
+                value={noteBody}
+                onChange={e => setNoteBody(e.target.value)}
+                placeholder="Add a note..."
+                rows={3}
+                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-snap-green resize-none"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && noteBody.trim()) {
+                    addNoteMutation.mutate()
+                  }
+                }}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-gray-400">Ctrl+Enter to submit</span>
+                <button
+                  disabled={!noteBody.trim() || addNoteMutation.isPending}
+                  onClick={() => addNoteMutation.mutate()}
+                  className="btn-primary py-1.5 px-3 text-sm"
+                >
+                  <Send size={13} />
+                  {addNoteMutation.isPending ? 'Saving...' : 'Add Note'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

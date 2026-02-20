@@ -68,6 +68,12 @@ export const usersApi = {
   deactivate: (id: string) => api.patch(`/users/${id}/deactivate`),
 }
 
+export const notesApi = {
+  list: (caseId: string) => api.get<import('../types').CaseNote[]>(`/cases/${caseId}/notes`),
+  create: (caseId: string, body: string) => api.post<import('../types').CaseNote>(`/cases/${caseId}/notes`, { body }),
+  delete: (caseId: string, noteId: string) => api.delete(`/cases/${caseId}/notes/${noteId}`),
+}
+
 export const reportsApi = {
   timeliness: () => api.get<import('../types').TimelinessReport>('/reports/timeliness'),
   workload: () => api.get('/reports/workload'),
