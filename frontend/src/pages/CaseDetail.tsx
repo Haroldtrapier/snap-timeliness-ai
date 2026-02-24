@@ -8,7 +8,7 @@ import {
 import { casesApi, documentsApi, usersApi, notesApi } from '../services/api'
 import { StatusBadge, PriorityBadge, EligibilityBadge, DocumentStatusBadge } from '../components/Badges'
 import { useToast } from '../components/Toast'
-import type { User as UserType, CaseNote } from '../types'
+import type { User as UserType, CaseNote, AuditLog } from '../types'
 
 const DOC_TYPES = [
   'IDENTITY', 'INCOME_PAYSTUB', 'INCOME_TAX_RETURN', 'RESIDENCY_UTILITY',
@@ -562,6 +562,37 @@ export default function CaseDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Activity Log */}
+          {(snapCase.auditLogs?.length ?? 0) > 0 && (
+            <div className="card">
+              <h2 className="font-semibold text-gray-900 mb-3 text-sm flex items-center gap-2">
+                Activity Log
+                <span className="text-xs font-normal text-gray-400">last {snapCase.auditLogs!.length} events</span>
+              </h2>
+              <ol className="relative border-l border-gray-200 ml-2 space-y-3">
+                {snapCase.auditLogs!.map((log: AuditLog) => (
+                  <li key={log.id} className="ml-4">
+                    <div className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full bg-gray-300 border-2 border-white" />
+                    <p className="text-xs font-medium text-gray-800 leading-snug">
+                      {log.action.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase())}
+                    </p>
+                    {log.details && Object.keys(log.details).length > 0 && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {Object.entries(log.details)
+                          .filter(([, v]) => v != null && String(v).length < 80)
+                          .map(([k, v]) => `${k}: ${v}`)
+                          .join(' · ')}
+                      </p>
+                    )}
+                    <time className="text-xs text-gray-400">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </time>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
       </div>
     </div>

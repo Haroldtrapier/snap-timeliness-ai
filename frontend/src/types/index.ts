@@ -50,6 +50,16 @@ export interface SnapCase {
   assignedWorker?: { id: string; firstName: string; lastName: string; email: string }
   documents?: Document[]
   eligibilityChecks?: EligibilityCheck[]
+  auditLogs?: AuditLog[]
+}
+
+export interface AuditLog {
+  id: string
+  action: string
+  details?: Record<string, unknown>
+  ipAddress?: string
+  createdAt: string
+  userId?: string
 }
 
 export interface Document {

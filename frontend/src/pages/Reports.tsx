@@ -14,6 +14,73 @@ function downloadCSV(filename: string, rows: string[][]): void {
   URL.revokeObjectURL(url)
 }
 
+function printReport(
+  timeliness: import('../types').TimelinessReport | undefined,
+  workload: Record<string, unknown>[],
+): void {
+  const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+  const tbl = (rows: string[][], headers: string[]) => `
+    <table>
+      <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`
+
+  const html = `<!DOCTYPE html><html><head><title>SNAP-AI Reports</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #111; margin: 24px; }
+    h1 { font-size: 18px; margin-bottom: 4px; }
+    h2 { font-size: 14px; margin: 20px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    p.sub { color: #555; font-size: 11px; margin: 0 0 12px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    th { background: #f0f0f0; text-align: left; padding: 6px 8px; font-size: 11px; }
+    td { padding: 5px 8px; border-bottom: 1px solid #eee; }
+    .pass { color: #166534; font-weight: bold; }
+    .fail { color: #991b1b; font-weight: bold; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .badge-pass { background: #dcfce7; color: #166534; }
+    .badge-fail { background: #fee2e2; color: #991b1b; }
+    @media print { @page { margin: 1.5cm; } }
+  </style></head><body>
+  <h1>SNAP-AI Reports &amp; Analytics</h1>
+  <p class="sub">Cumberland County DSS &nbsp;·&nbsp; Generated ${date}</p>
+
+  ${timeliness ? `
+  <h2>Federal Timeliness Compliance</h2>
+  <p class="sub">Period: ${timeliness.period}</p>
+  <span class="badge ${timeliness.compliant ? 'badge-pass' : 'badge-fail'}">
+    ${timeliness.compliant ? 'PASSING' : 'AT RISK'}
+  </span>
+  ${tbl([
+    ['Standard (30-day)', String(timeliness.standard.total), String(timeliness.standard.timely),
+     `${timeliness.standard.rate}%`, `${timeliness.standard.federalStandard}%`,
+     timeliness.standard.rate >= timeliness.standard.federalStandard ? '✓' : '✗'],
+    ['Expedited (7-day)', String(timeliness.expedited.total), String(timeliness.expedited.timely),
+     `${timeliness.expedited.rate}%`, `${timeliness.expedited.federalStandard}%`,
+     timeliness.expedited.rate >= timeliness.expedited.federalStandard ? '✓' : '✗'],
+  ], ['Report Type', 'Total Cases', 'Timely Cases', 'Rate', 'Required', 'Status'])}
+  ` : ''}
+
+  ${workload.length ? `
+  <h2>Worker Workload Distribution</h2>
+  ${tbl(
+    workload.map(w => [String(w.name), String(w.activeCases), String(w.expeditedCases), String(w.overdueCount)]),
+    ['Worker', 'Active Cases', 'Expedited', 'Overdue'],
+  )}
+  ` : ''}
+
+  <p style="margin-top:32px; color:#999; font-size:10px;">
+    SNAP-AI v1.0 — Cumberland County DSS — 7 CFR § 273.2 federal processing standards
+  </p>
+  </body></html>`
+
+  const w = window.open('', '_blank', 'width=800,height=600')
+  if (!w) return
+  w.document.write(html)
+  w.document.close()
+  w.focus()
+  w.print()
+}
+
 const COLORS = ['#2D7D46', '#1565C0', '#E65100', '#9C27B0', '#757575', '#F44336']
 
 function MetricCard({ label, value, sub, color }: { label: string; value: string | number; sub: string; color: string }) {
@@ -78,10 +145,17 @@ export default function ReportsPage() {
         </div>
         <div className="flex gap-2">
           <button onClick={exportTimeliness} disabled={!timeliness} className="btn-secondary text-xs py-1.5">
-            <Download size={14} /> Export Timeliness CSV
+            <Download size={14} /> Timeliness CSV
           </button>
           <button onClick={exportWorkload} disabled={!workload.length} className="btn-secondary text-xs py-1.5">
-            <Download size={14} /> Export Workload CSV
+            <Download size={14} /> Workload CSV
+          </button>
+          <button
+            onClick={() => printReport(timeliness, workload)}
+            disabled={!timeliness && !workload.length}
+            className="btn-secondary text-xs py-1.5"
+          >
+            <Download size={14} /> Print / Save PDF
           </button>
         </div>
       </div>

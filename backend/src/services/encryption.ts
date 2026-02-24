@@ -33,14 +33,16 @@ export function encrypt(plaintext: string): string {
 
 /**
  * Decrypts a value produced by `encrypt()`.
- * Returns null if the input is not in the expected format or decryption fails.
+ * Throws if ENCRYPTION_KEY is missing or malformed (configuration error).
+ * Returns null if the input is not in the expected format or authentication fails.
  */
 export function decrypt(value: string): string | null {
   const parts = value.split(':')
   if (parts.length !== 3) return null
 
+  const key = getKey() // intentionally outside try — missing key is a config error
+
   try {
-    const key = getKey()
     const iv = Buffer.from(parts[0], 'hex')
     const tag = Buffer.from(parts[1], 'hex')
     const ciphertext = Buffer.from(parts[2], 'hex')
