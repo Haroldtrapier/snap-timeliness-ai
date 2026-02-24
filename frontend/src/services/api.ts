@@ -32,6 +32,8 @@ export const authApi = {
   forgotPassword: (email: string) => api.post<{ message: string }>('/auth/forgot-password', { email }),
   resetPassword: (token: string, password: string) =>
     api.post<{ message: string }>('/auth/reset-password', { token, password }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post<{ message: string }>('/auth/change-password', { currentPassword, newPassword }),
 }
 
 export const casesApi = {

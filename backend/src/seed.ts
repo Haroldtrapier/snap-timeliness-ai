@@ -70,6 +70,18 @@ const SAMPLE_CASES = [
   },
 ]
 
+// Guard: fail early with a clear message if required env vars are missing
+const key = process.env.ENCRYPTION_KEY
+if (!key || Buffer.from(key, 'hex').length !== 32) {
+  console.error(
+    '\n[seed] ERROR: ENCRYPTION_KEY is missing or invalid.\n' +
+    '  Generate a key with:\n' +
+    "    node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"\n" +
+    '  Then add it to your .env file as ENCRYPTION_KEY=<64-hex-chars>\n',
+  )
+  process.exit(1)
+}
+
 async function seed() {
   console.log('Seeding database...')
   const passwordHash = await bcrypt.hash('Password123!', 12)

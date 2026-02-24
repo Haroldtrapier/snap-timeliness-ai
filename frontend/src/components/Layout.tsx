@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderOpen, BarChart3, Calculator,
-  LogOut, Menu, X, Bell, ChevronRight, Users
+  LogOut, Menu, X, Bell, ChevronRight, Users, Settings
 } from 'lucide-react'
 import { useState } from 'react'
 import type { User } from '../types'
@@ -12,6 +12,7 @@ const NAV: { path: string; label: string; icon: React.ComponentType<{ size: numb
   { path: '/eligibility-checker', label: 'Eligibility Check', icon: Calculator, roles: null },
   { path: '/reports', label: 'Reports', icon: BarChart3, roles: null },
   { path: '/users', label: 'Staff', icon: Users, roles: ['SUPERVISOR', 'ADMIN'] },
+  { path: '/settings', label: 'Settings', icon: Settings, roles: null },
 ]
 
 interface LayoutProps {
