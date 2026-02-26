@@ -1,5 +1,7 @@
 import { Request } from 'express'
-import { Role } from '@prisma/client'
+
+// Defined locally to avoid a hard dependency on the generated @prisma/client types
+type Role = 'ELIGIBILITY_WORKER' | 'SUPERVISOR' | 'ADMIN'
 
 export interface AuthenticatedRequest extends Request {
   user?: {

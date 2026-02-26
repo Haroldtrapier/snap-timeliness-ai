@@ -25,5 +25,5 @@ RUN mkdir -p /app/uploads
 
 EXPOSE 3001
 
-# Run migrations then start server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+# Sync schema to DB then start server (db push is used because migrations are not tracked)
+CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]

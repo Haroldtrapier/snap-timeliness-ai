@@ -243,8 +243,8 @@ describe('Income-based scoring', () => {
 describe('Destitution flag', () => {
   test('assets=$99, income=$499 → +8 destitution bonus', () => {
     const r = scoreCase({ ...base, assets: 99, monthlyGrossIncome: 499 })
-    // income < 300 → +5; destitution → +8; total = 13
-    expect(r.score).toBe(13)
+    // income=499 is NOT < 300, so no income bonus; destitution (assets<100 && income<500) → +8
+    expect(r.score).toBe(8)
   })
 
   test('assets=$100 (not < 100) → no destitution bonus', () => {

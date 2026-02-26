@@ -36,7 +36,7 @@ function getMaxAllotment(householdSize: number): number {
 }
 
 function getStandardDeduction(householdSize: number): number {
-  return householdSize >= 5 ? STANDARD_DEDUCTION_LARGE_HH : (STANDARD_DEDUCTION[householdSize] ?? 198)
+  return STANDARD_DEDUCTION[householdSize] ?? STANDARD_DEDUCTION_LARGE_HH
 }
 
 /**
