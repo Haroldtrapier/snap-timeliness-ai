@@ -45,6 +45,12 @@ export const casesApi = {
   decision: (id: string, data: { decision: string; denialReason?: string; notes?: string }) =>
     api.patch(`/cases/${id}/decision`, data),
   aiScreen: (id: string) => api.post(`/cases/${id}/ai-screen`),
+  generateDenialLetter: (id: string, language = 'English') =>
+    api.post<{ letterText: string; language: string; generatedAt: string }>(
+      `/cases/${id}/denial-letter`,
+      null,
+      { params: { language } }
+    ),
   stats: () => api.get<import('../types').DashboardStats>('/cases/stats/overview'),
 }
 

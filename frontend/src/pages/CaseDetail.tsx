@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, Brain, CheckCircle2, Upload, FileText,
-  AlertTriangle, User, Home, DollarSign, UserCheck, MessageSquare, Trash2, Send, Eye, X as XIcon
+  AlertTriangle, User, Home, DollarSign, UserCheck, MessageSquare, Trash2, Send, Eye, X as XIcon, Mail
 } from 'lucide-react'
 import { casesApi, documentsApi, usersApi, notesApi } from '../services/api'
 import { StatusBadge, PriorityBadge, EligibilityBadge, DocumentStatusBadge } from '../components/Badges'
@@ -47,6 +47,8 @@ export default function CaseDetailPage() {
   const [selectedWorkerId, setSelectedWorkerId] = useState('')
   const [noteBody, setNoteBody] = useState('')
   const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; mimeType: string } | null>(null)
+  const [letterLanguage, setLetterLanguage] = useState('English')
+  const [denialLetter, setDenialLetter] = useState('')
 
   const handleViewDoc = async (docId: string, name: string, mimeType: string) => {
     try {
@@ -106,6 +108,16 @@ export default function CaseDetailPage() {
     onError: () => toast('Failed to record decision', 'error'),
   })
 
+  const generateLetterMutation = useMutation({
+    mutationFn: () => casesApi.generateDenialLetter(id!, letterLanguage),
+    onSuccess: ({ data }) => {
+      setDenialLetter(data.letterText)
+      qc.invalidateQueries({ queryKey: ['case', id] })
+      toast('Denial letter generated')
+    },
+    onError: () => toast('Failed to generate denial letter', 'error'),
+  })
+
   const uploadMutation = useMutation({
     mutationFn: (file: File) => documentsApi.upload(id!, file, docType),
     onSuccess: () => {
@@ -162,6 +174,7 @@ export default function CaseDetailPage() {
   )
 
   return (
+    <>
     <div className="space-y-5 max-w-5xl">
       {/* Header */}
       <div className="flex items-center gap-4">
@@ -543,6 +556,61 @@ export default function CaseDetailPage() {
             </div>
           )}
 
+          {/* Denial Letter (shown when case is DENIED) */}
+          {snapCase.status === 'DENIED' && (
+            <div className="card">
+              <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Mail size={16} className="text-red-500" /> Denial Notice
+              </h2>
+              {(denialLetter || snapCase.denialLetterText) ? (
+                <div className="mb-3">
+                  <p className="text-xs text-gray-400 mb-2">
+                    {snapCase.denialLetterGeneratedAt
+                      ? `Generated ${new Date(snapCase.denialLetterGeneratedAt).toLocaleDateString()}`
+                      : 'Just generated'}
+                  </p>
+                  <pre className="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3 whitespace-pre-wrap leading-relaxed max-h-56 overflow-y-auto">
+                    {denialLetter || snapCase.denialLetterText}
+                  </pre>
+                  <button
+                    onClick={() => {
+                      const text = denialLetter || snapCase.denialLetterText || ''
+                      navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard'))
+                    }}
+                    className="mt-2 w-full btn-secondary text-xs py-1.5"
+                  >
+                    Copy Text
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 mb-3">No denial letter generated yet</p>
+              )}
+              <div className="flex gap-2">
+                <select
+                  value={letterLanguage}
+                  onChange={e => setLetterLanguage(e.target.value)}
+                  className="flex-1 text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-snap-green"
+                >
+                  <option value="English">English</option>
+                  <option value="Spanish">Spanish</option>
+                  <option value="French">French</option>
+                  <option value="Vietnamese">Vietnamese</option>
+                  <option value="Arabic">Arabic</option>
+                </select>
+                <button
+                  onClick={() => generateLetterMutation.mutate()}
+                  disabled={generateLetterMutation.isPending}
+                  className="flex-1 btn-secondary text-sm"
+                >
+                  <Mail size={14} />
+                  {generateLetterMutation.isPending
+                    ? 'Generating...'
+                    : (denialLetter || snapCase.denialLetterText) ? 'Regenerate' : 'Generate'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Timeline */}
           <div className="card">
             <h2 className="font-semibold text-gray-900 mb-3">Timeline</h2>
@@ -630,5 +698,6 @@ export default function CaseDetailPage() {
         </div>
       </div>
     )}
+    </>
   )
 }

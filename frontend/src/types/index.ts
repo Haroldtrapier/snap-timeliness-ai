@@ -39,6 +39,8 @@ export interface SnapCase {
   eligibilityResult?: EligibilityResult
   estimatedBenefit?: number
   denialReason?: string
+  denialLetterText?: string
+  denialLetterGeneratedAt?: string
   notes?: string
   applicationDate: string
   dueDate: string

@@ -111,6 +111,8 @@ model SnapCase {
   eligibilityResult     EligibilityResult?
   estimatedBenefit      Float?
   denialReason          String?
+  denialLetterText      String?           // AI-generated plain-language denial explanation
+  denialLetterGeneratedAt DateTime?
   notes                 String?
 
   applicationDate       DateTime          @default(now())

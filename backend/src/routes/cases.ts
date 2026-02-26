@@ -6,7 +6,7 @@ import { authenticate, requireRole } from '../middleware/auth'
 import { AuthenticatedRequest } from '../types'
 import { determineEligibility } from '../services/eligibilityEngine'
 import { scoreCase } from '../services/casePrioritizer'
-import { screenApplication } from '../services/aiService'
+import { screenApplication, generateDenialExplanation } from '../services/aiService'
 import { getDocumentSummary } from '../services/documentProcessor'
 import { encrypt, maskSsn } from '../services/encryption'
 
@@ -319,6 +319,45 @@ router.post('/:id/ai-screen', async (req: AuthenticatedRequest, res: Response) =
   })
 
   res.json(screening)
+})
+
+// POST /api/cases/:id/denial-letter — generate AI plain-language denial notice
+router.post('/:id/denial-letter', async (req: AuthenticatedRequest, res: Response) => {
+  const snapCase = await prisma.snapCase.findUnique({ where: { id: req.params.id } })
+  if (!snapCase) {
+    res.status(404).json({ error: 'Case not found' })
+    return
+  }
+  if (snapCase.status !== 'DENIED') {
+    res.status(400).json({ error: 'Case must be DENIED before generating a denial letter' })
+    return
+  }
+  if (!snapCase.denialReason) {
+    res.status(400).json({ error: 'No denial reason recorded for this case' })
+    return
+  }
+
+  const language = (req.query.language as string) ?? 'English'
+  const reasons = snapCase.denialReason.split(';').map(r => r.trim()).filter(Boolean)
+
+  const letterText = await generateDenialExplanation(reasons, snapCase.householdSize, language)
+
+  await prisma.snapCase.update({
+    where: { id: req.params.id },
+    data: {
+      denialLetterText: letterText,
+      denialLetterGeneratedAt: new Date(),
+      auditLogs: {
+        create: {
+          userId: req.user!.id,
+          action: 'DENIAL_LETTER_GENERATED',
+          details: { language },
+        },
+      },
+    },
+  })
+
+  res.json({ letterText, language, generatedAt: new Date().toISOString() })
 })
 
 export default router
