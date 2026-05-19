@@ -1,0 +1,211 @@
+import type { SnapCase, DocumentRecord } from '../types';
+
+const baseDocs = (): DocumentRecord[] => [
+  { key: 'id', label: 'Government-issued ID', required: true, status: 'received' },
+  { key: 'proof_of_income', label: 'Proof of income', required: true, status: 'received' },
+  { key: 'utility_bill', label: 'Utility bill', required: true, status: 'received' },
+  { key: 'lease_proof', label: 'Lease / rent proof', required: true, status: 'received' },
+  { key: 'ssn_verification', label: 'SSN verification', required: true, status: 'received' },
+  { key: 'child_support_docs', label: 'Child support / dependent documents', required: false, status: 'received' },
+];
+
+export const mockCases: SnapCase[] = [
+  {
+    id: 'SNAP-1001',
+    applicantName: 'Maria Alvarez',
+    address: '412 Cedar Ave, Fayetteville, NC 28301',
+    county: 'Cumberland',
+    householdSize: 3,
+    income: 1850,
+    employmentStatus: 'Part-time',
+    benefitsRequested: ['SNAP'],
+    emergencyNeed: false,
+    householdMembers: [
+      { id: 'h1', name: 'Maria Alvarez', age: 34, relationship: 'Self', income: 1850 },
+      { id: 'h2', name: 'Luis Alvarez', age: 9, relationship: 'Child', income: 0, isStudent: true },
+      { id: 'h3', name: 'Sofia Alvarez', age: 6, relationship: 'Child', income: 0, isStudent: true },
+    ],
+    documents: baseDocs(),
+    riskFlags: [],
+    eligibility: 'likely eligible',
+    queueStatus: 'ready for caseworker',
+    submittedAt: '2026-05-14',
+    priority: 'normal',
+    notes: 'Clean application. Income within 130% FPL for household of 3.',
+  },
+  {
+    id: 'SNAP-1002',
+    applicantName: 'James Whitfield',
+    address: '88 Oak Street, Fayetteville, NC 28303',
+    county: 'Cumberland',
+    householdSize: 2,
+    income: 1400,
+    employmentStatus: 'Part-time',
+    benefitsRequested: ['SNAP'],
+    emergencyNeed: false,
+    householdMembers: [
+      { id: 'h1', name: 'James Whitfield', age: 41, relationship: 'Self', income: 1400 },
+      { id: 'h2', name: 'Ava Whitfield', age: 12, relationship: 'Child', income: 0, isStudent: true },
+    ],
+    documents: baseDocs().map((d) =>
+      d.key === 'proof_of_income' ? { ...d, status: 'missing', note: 'No pay stubs uploaded' } : d,
+    ),
+    riskFlags: [
+      {
+        id: 'r1',
+        type: 'Missing required document',
+        severity: 'medium',
+        detail: 'Proof of income missing — last 30 days of pay stubs required.',
+        requiresHumanReview: false,
+      },
+    ],
+    eligibility: 'needs more information',
+    queueStatus: 'missing documents',
+    submittedAt: '2026-05-15',
+    priority: 'normal',
+  },
+  {
+    id: 'SNAP-1003',
+    applicantName: 'Renee Carter',
+    address: '412 Cedar Ave, Fayetteville, NC 28301',
+    county: 'Cumberland',
+    householdSize: 3,
+    income: 1900,
+    employmentStatus: 'Part-time',
+    benefitsRequested: ['SNAP'],
+    emergencyNeed: false,
+    householdMembers: [
+      { id: 'h1', name: 'Renee Carter', age: 36, relationship: 'Self', income: 1900 },
+      { id: 'h2', name: 'Luis Alvarez', age: 9, relationship: 'Child', income: 0, isStudent: true },
+      { id: 'h3', name: 'Sofia Alvarez', age: 6, relationship: 'Child', income: 0, isStudent: true },
+    ],
+    documents: baseDocs(),
+    riskFlags: [
+      {
+        id: 'r1',
+        type: 'Duplicate household member',
+        severity: 'high',
+        detail: 'Children "Luis Alvarez" and "Sofia Alvarez" also listed on SNAP-1001 at same address.',
+        requiresHumanReview: true,
+      },
+      {
+        id: 'r2',
+        type: 'Same address used across multiple applications',
+        severity: 'high',
+        detail: '412 Cedar Ave appears on SNAP-1001 (Maria Alvarez).',
+        requiresHumanReview: true,
+      },
+    ],
+    eligibility: 'needs more information',
+    queueStatus: 'risk review',
+    submittedAt: '2026-05-16',
+    priority: 'high',
+  },
+  {
+    id: 'SNAP-1004',
+    applicantName: 'Devon Pierce',
+    address: '17 Magnolia Ct, Spring Lake, NC 28390',
+    county: 'Cumberland',
+    householdSize: 4,
+    income: 2100,
+    employmentStatus: 'Full-time',
+    benefitsRequested: ['SNAP'],
+    emergencyNeed: false,
+    householdMembers: [
+      { id: 'h1', name: 'Devon Pierce', age: 38, relationship: 'Self', income: 2100 },
+      { id: 'h2', name: 'Tasha Pierce', age: 35, relationship: 'Spouse', income: 0 },
+      { id: 'h3', name: 'Jamal Pierce', age: 10, relationship: 'Child', income: 0, isStudent: true },
+      { id: 'h4', name: 'Kira Pierce', age: 7, relationship: 'Child', income: 0, isStudent: true },
+    ],
+    documents: baseDocs().map((d) =>
+      d.key === 'utility_bill'
+        ? { ...d, status: 'possible mismatch', note: 'Utility bill is in name of minor child "Jamal Pierce".' }
+        : d,
+    ),
+    riskFlags: [
+      {
+        id: 'r1',
+        type: 'Utility bill in child\'s name',
+        severity: 'medium',
+        detail: 'Utility bill submitted is addressed to "Jamal Pierce" (age 10).',
+        requiresHumanReview: false,
+      },
+    ],
+    eligibility: 'needs more information',
+    queueStatus: 'risk review',
+    submittedAt: '2026-05-17',
+    priority: 'normal',
+  },
+  {
+    id: 'SNAP-1005',
+    applicantName: 'Brenda Hollis',
+    address: '204 Riverbend Dr, Hope Mills, NC 28348',
+    county: 'Cumberland',
+    householdSize: 2,
+    income: 0,
+    employmentStatus: 'Unemployed',
+    benefitsRequested: ['SNAP', 'Emergency assistance'],
+    emergencyNeed: true,
+    householdMembers: [
+      { id: 'h1', name: 'Brenda Hollis', age: 58, relationship: 'Self', income: 0, isElderly: false },
+      { id: 'h2', name: 'Carl Hollis', age: 67, relationship: 'Spouse', income: 0, isElderly: true, isDisabled: true },
+    ],
+    documents: baseDocs().map((d) =>
+      d.key === 'proof_of_income'
+        ? { ...d, status: 'received', note: 'Zero-income statement on file' }
+        : d,
+    ),
+    riskFlags: [
+      {
+        id: 'r1',
+        type: 'Expedited service indicator',
+        severity: 'medium',
+        detail: 'Household reports $0 income and includes elderly/disabled adult — federal expedited rules may apply.',
+        requiresHumanReview: true,
+      },
+    ],
+    eligibility: 'expedited review recommended',
+    queueStatus: 'expedited review',
+    submittedAt: '2026-05-18',
+    priority: 'expedited',
+  },
+  {
+    id: 'SNAP-1006',
+    applicantName: 'Tyrone Walker',
+    address: '932 Birchwood Ln, Fayetteville, NC 28304',
+    county: 'Cumberland',
+    householdSize: 1,
+    income: 1750,
+    employmentStatus: 'Full-time',
+    benefitsRequested: ['SNAP'],
+    emergencyNeed: false,
+    householdMembers: [
+      { id: 'h1', name: 'Tyrone Walker', age: 29, relationship: 'Self', income: 1750 },
+    ],
+    documents: baseDocs().map((d) =>
+      d.key === 'id'
+        ? { ...d, status: 'possible mismatch', note: 'Date field on ID appears altered; name spelling differs from application.' }
+        : d,
+    ),
+    riskFlags: [
+      {
+        id: 'r1',
+        type: 'Possible altered document',
+        severity: 'high',
+        detail: 'ID document shows possible date alteration. Requires human review — do not deny benefits automatically.',
+        requiresHumanReview: true,
+      },
+      {
+        id: 'r2',
+        type: 'Name mismatch',
+        severity: 'medium',
+        detail: 'Name on ID ("Tyron Walker") differs from name on application ("Tyrone Walker").',
+        requiresHumanReview: false,
+      },
+    ],
+    eligibility: 'needs more information',
+    queueStatus: 'risk review',
+    submittedAt: '2026-05-18',
+    priority: 'high',
+  },
+];

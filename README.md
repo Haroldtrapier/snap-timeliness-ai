@@ -1,237 +1,124 @@
-# SNAP-AI: SNAP Application Backlog Automation & Eligibility Acceleration
+# SNAP AI — Caseworker MVP Demo
 
-## 🎯 Project Overview
+SNAP AI is a standalone, AI-powered benefits processing support system for SNAP /
+state social services agencies. It helps caseworkers process applications faster
+by organizing intake data, reviewing uploaded documents, surfacing missing or
+inconsistent information, flagging risk indicators, generating case summaries,
+and routing final decisions to human review.
 
-**Primary Target:** County & State Social Services Agencies  
-**Core Purpose:** SNAP Application Backlog Automation & Eligibility Acceleration  
-**Initial Deployment:** Cumberland County, North Carolina  
-**Strategic Level:** State & County Government Automation Platform
+> **SNAP AI provides decision support only. Final eligibility decisions remain
+> with authorized agency staff.** SNAP AI does not deny benefits automatically and
+> does not accuse applicants of fraud.
 
----
+This repository contains a **frontend MVP** built for a pilot demo with state
+and county leadership. All data is mocked — no real resident data is used.
 
-## 📋 What SNAP-AI Does
-
-SNAP-AI is built to help counties **clear Supplemental Nutrition Assistance Program (SNAP) application backlogs** through intelligent automation of eligibility processing. The system addresses the critical delays in SNAP benefit delivery by accelerating application review while maintaining strict compliance with federal and state regulations.
-
-### Core Functions
-
-#### 1. **Automated Application Review**
-- Intelligent parsing of SNAP applications (paper and digital)
-- Automatic extraction of applicant information
-- Cross-field validation and consistency checks
-- Identification of missing or incomplete information
-- Flagging of issues requiring human review
-
-#### 2. **Eligibility Pre-Screening**
-- Automated income verification checks
-- Household composition analysis
-- Asset and resource verification
-- Categorical eligibility determination
-- Preliminary benefit calculation
-- Compliance with federal income limits (130% of poverty line)
-
-#### 3. **Document Validation**
-- Automated document classification and indexing
-- Identity verification support
-- Income documentation review (pay stubs, tax returns)
-- Residency verification
-- Citizenship/immigration status validation
-- Utility bill and expense verification
-
-#### 4. **Case Prioritization**
-- Urgency scoring based on household needs
-- Expedited service identification (homeless, no income, migrant workers)
-- Application age tracking and priority queuing
-- Time-to-decision monitoring
-- Deadline compliance tracking
-
-#### 5. **Workload Distribution Dashboards**
-- Real-time case assignment to eligibility workers
-- Capacity-based load balancing
-- Performance metrics and productivity tracking
-- Backlog visualization and trending
-- Worker efficiency analytics
-
-#### 6. **Compliance Checks**
-- Federal SNAP guidelines enforcement (7 CFR Part 273)
-- State-specific regulation compliance (North Carolina DHHS rules)
-- Quality control scoring
-- Error rate reduction
-- Audit trail maintenance
-
-#### 7. **Processing Speed Improvement & Reporting**
-- Processing time analytics
-- Bottleneck identification
-- Workflow optimization recommendations
-- Federal reporting compliance (FNS-388, FNS-388A)
-- Performance reporting for state and federal oversight
+For deeper background and product positioning, see [`docs/PROJECT_BACKGROUND.md`](./docs/PROJECT_BACKGROUND.md).
 
 ---
 
-## 🎯 Strategic Positioning
+## Tech stack
 
-### Market Position
-- **State & County Government Automation Platform**
-- Workforce augmentation tool (not replacement)
-- Reduces SNAP application processing delays
-- Improves benefit delivery timelines for vulnerable populations
-- Positioned for state modernization grants and digital transformation funding
-
-### Key Differentiators
-- **Human-Centered Automation:** Assists eligibility workers rather than replacing them
-- **Regulatory Compliance Built-In:** Ensures adherence to federal and state SNAP rules
-- **Rapid Deployment:** County-level implementation in weeks, not years
-- **Scalable Solution:** From single-county pilots to statewide rollout
+- React 18 + TypeScript
+- Vite 5
+- React Router 6
+- Local React state (no backend required for the demo)
 
 ---
 
-## 🏛️ Target Deployment
+## Run locally
 
-### Primary Customers
-- **County Departments of Social Services (DSS)**
-- **State Human Services Agencies**
-- North Carolina Department of Health and Human Services (NCDHHS)
-- Other state SNAP agencies nationwide
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # production build → dist/
+npm run preview  # preview the production build
+```
 
-### Initial Pilot
-- **Cumberland County, North Carolina**
-- Population: ~330,000
-- SNAP caseload: ~30,000+ households
-- Known for significant application backlogs
-
-### Expansion Roadmap
-1. **Phase 1:** Cumberland County pilot
-2. **Phase 2:** North Carolina statewide rollout
-3. **Phase 3:** Multi-state expansion
+A FastAPI backend is **not** required for the demo. Production rollout uses a
+secure backend with audit logging and state-specific rule packs (see Phase 2
+below).
 
 ---
 
-## 💼 Business Model
+## App routes
 
-**Revenue Model:** SaaS + Government Contracts  
-- Per-application pricing model
-- Monthly/annual subscription tiers
-- County-level contracts
-- State enterprise agreements
-- Implementation and training services
-- Ongoing support and maintenance
-
-### Funding Sources
-- County IT modernization budgets
-- State SNAP administrative funding (50% federal match)
-- Federal modernization grants
-- Digital transformation initiatives
-
----
-
-## 📊 Key Performance Indicators
-
-### Success Metrics
-- **Application Processing Time:** Target 50% reduction in processing days
-- **Backlog Reduction:** Clear aged applications within 90 days
-- **Accuracy Rate:** Maintain >95% eligibility determination accuracy
-- **Timeliness Compliance:** Meet federal 30-day processing standard
-- **Cost Efficiency:** Reduce per-application administrative cost
-- **Client Satisfaction:** Improved applicant experience scores
-
-### Federal SNAP Performance Measures
-- **Payment Error Rate (PER):** Target <5%
-- **Negative Error Rate (NER):** Target <5%
-- **Positive Error Rate (POSER):** Minimize overpayments
-- **Timeliness:** 30-day standard for non-expedited, 7-day for expedited
+| Route | Purpose |
+|---|---|
+| `/` | Landing page — plain-language pitch + CTA |
+| `/dashboard` | Caseworker dashboard — totals, pending, missing docs, risk flags, today’s priority cases |
+| `/intake` | Applicant intake form — saves to local state |
+| `/household` | Household composition, unusual-pattern detection |
+| `/documents` | Document checklist, mock upload, mismatch examples |
+| `/eligibility` | Rules-based eligibility pre-screen + disclaimer |
+| `/risk` | Risk / integrity flags across the case load |
+| `/summary` | AI case summary — generate, copy, send to human review |
+| `/queue` | Human review queue — priority, status, assign reviewer, escalate |
+| `/pilot` | Senator / pilot brief — outcomes, security, pricing, Phase 2 |
 
 ---
 
-## 🔐 Compliance & Security
+## Mock data
 
-### Federal Regulations
-- **7 CFR Part 273:** SNAP Eligibility Requirements
-- **7 CFR Part 277:** SNAP Data Security Standards
-- **FNS Handbook 901:** Quality Control Review
+Six demo cases ship in `src/data/mockCases.ts`:
 
-### Data Security
-- **PII Protection:** Personal Identifiable Information safeguards
-- **IRS 1075 Compliance:** Tax information security
-- **HIPAA Compliance:** Health information protection (if applicable)
-- **State Security Standards:** North Carolina SCIF compliance
-
-### Accessibility
-- **Section 508 Compliance:** ADA accessibility requirements
-- **Language Access:** Multi-language support for LEP populations
+1. `SNAP-1001` — clean application, likely eligible
+2. `SNAP-1002` — missing proof of income
+3. `SNAP-1003` — same household duplicate application (children listed twice, same address)
+4. `SNAP-1004` — utility bill in child’s name
+5. `SNAP-1005` — emergency expedited need (zero income, elderly + disabled household member)
+6. `SNAP-1006` — possible altered ID document
 
 ---
 
-## 🛠️ Technology Stack
+## Compliance & safety language
 
-*(To be populated with specific technical architecture)*
+The UI consistently uses non-accusatory language:
 
-### Anticipated Core Components
-- Document OCR and classification
-- Natural Language Processing (NLP)
-- Rules engine for eligibility determination
-- Integration with state SNAP systems (NC FAST, etc.)
-- Secure API layer
-- Cloud-based infrastructure
-- Real-time analytics dashboard
+- "possible inconsistency"
+- "requires review"
+- "risk indicator"
+- "human review required"
 
----
-
-## 🚀 Roadmap
-
-### Phase 1: Cumberland County Pilot (Q2 2026)
-- Core application review automation
-- Document classification system
-- Basic eligibility pre-screening
-- Integration with NC FAST system
-
-### Phase 2: Enhanced Intelligence (Q3-Q4 2026)
-- Advanced ML models for fraud detection
-- Predictive workload balancing
-- Mobile-friendly case worker interface
-- Expanded reporting capabilities
-
-### Phase 3: Statewide Rollout (2027)
-- Multi-county deployment across North Carolina
-- State-level analytics and oversight tools
-- Cross-county performance benchmarking
-- Continuous improvement based on pilot learnings
-
-### Phase 4: National Expansion (2027-2028)
-- Multi-state platform deployment
-- State-specific configuration management
-- Federal reporting automation
-- Best practice sharing network
+Every high-severity flag is marked **Requires human review**. The pre-screen
+result and case summary include the disclaimer above.
 
 ---
 
-## 📞 Project Information
+## Privacy & security messaging (pilot brief)
 
-**Project Type:** State/County Government Social Services Automation  
-**Status:** Development / Pilot Planning  
-**Primary Location:** Cumberland County, North Carolina  
-**Owner:** Harold Trapier  
-
----
-
-## 🌐 Related Projects
-
-- **Vision-AI:** Federal VA claims modernization platform
-- **Sturgeon AI:** Contract intelligence system for government contractors
+- Encryption in transit and at rest
+- Role-based access control (caseworker / supervisor / admin)
+- Audit logs of every case action
+- No real resident data in the pilot demo
+- Posture aligned to federal SNAP confidentiality requirements (7 CFR §272.1(c))
 
 ---
 
-## 📝 Notes
+## Demo script for the Senator meeting
 
-This system is **separate from Sturgeon AI**, which serves government contractors. SNAP-AI is designed specifically for **county and state government social services agencies** to improve benefits delivery.
-
-**SNAP-AI is a workforce augmentation tool**, not a workforce replacement. It is designed to help eligibility workers process applications faster and more accurately while maintaining compliance with federal SNAP regulations.
-
-### Why Cumberland County?
-- Known SNAP processing backlogs
-- Strong county government leadership
-- Opportunity for measurable impact
-- Strategic location in North Carolina for state-level expansion
+See [`docs/DEMO_SCRIPT.md`](./docs/DEMO_SCRIPT.md).
 
 ---
 
-*Last Updated: February 2026*
+## Phase 2 production features
+
+Listed in-app on `/pilot` and in [`docs/PHASE_2.md`](./docs/PHASE_2.md):
+
+- SSO (SAML/OIDC) and full RBAC
+- Secure document storage with virus scan + PII tokenization
+- State-specific eligibility rule packs (7 CFR Part 273 + state addenda)
+- Integration with state SNAP case management (NCFAST and equivalents)
+- Workforce analytics for supervisors
+- Configurable risk-flag library with caseworker feedback loop
+- Tamper-evident end-to-end audit logging
+- WCAG 2.1 AA / Section 508 conformance
+- FNS-388 / FNS-388A federal reporting export
+- Optional AI-assisted document OCR with mandatory human verification gate
+
+---
+
+## What this is *not*
+
+This is not Sturgeon, not Apex OS / Imani, and not GovCon. SNAP AI is its own
+standalone product for state and county social services agencies.
