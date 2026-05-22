@@ -1,19 +1,38 @@
 import Link from "next/link";
-import { mockDocuments, mockChecklist } from "@/lib/mock-data";
+import { redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import { Disclaimer } from "@/components/Disclaimer";
+import { getOwnedClient, getOrCreateActiveCase } from "@/lib/db/cases";
+import { listDocuments } from "@/lib/db/documents";
+import { getOrCreateChecklist } from "@/lib/db/checklist";
+import { UploadForm } from "./upload-form";
 
-export default function DocumentsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DocumentsPage() {
+  const client = await getOwnedClient();
+  if (!client) redirect("/onboarding");
+  const snapCase = await getOrCreateActiveCase({ clientId: client.id });
+  const [{ items }, docs] = await Promise.all([
+    getOrCreateChecklist(snapCase.id),
+    listDocuments(client.id),
+  ]);
+
+  const labelById = new Map(items.map((i) => [i.id, i.label]));
+
   return (
     <div className="space-y-4">
       <header className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold">Documents</h1>
-          <p className="text-sm text-gray-600">Uploaded files are private. Only you and the human caseworker assigned to your case can access them.</p>
+          <p className="text-sm text-gray-600">
+            Uploaded files are private. Only you and the human caseworker assigned to your case can access them.
+          </p>
         </div>
-        <button className="btn-primary" disabled>Upload (pilot)</button>
       </header>
       <Disclaimer variant="compact" />
+
+      <UploadForm checklistOptions={items.map((i) => ({ id: i.id, label: i.label }))} />
 
       <div className="card">
         <table className="w-full text-sm">
@@ -28,33 +47,43 @@ export default function DocumentsPage() {
             </tr>
           </thead>
           <tbody>
-            {mockDocuments.map((d) => {
-              const mapped = mockChecklist.find((c) => c.id === d.mappedTo);
-              return (
-                <tr key={d.id} className="border-t border-gray-100">
-                  <td className="p-3 font-medium">{d.name}</td>
-                  <td className="p-3">{d.type}</td>
-                  <td className="p-3 text-gray-700">{mapped?.label || "—"}</td>
-                  <td className="p-3 text-gray-600">{formatDate(d.uploadedAt)}</td>
-                  <td className="p-3">
-                    <span className={
-                      d.status === "accepted" ? "badge-green"
-                      : d.status === "flagged" ? "badge-red"
-                      : d.status === "review" ? "badge-amber"
-                      : "badge-gray"
-                    }>
-                      {d.status}
-                    </span>
-                    {d.flags.length > 0 && (
-                      <div className="text-xs text-red-700 mt-1">Flag: {d.flags.join(", ")}</div>
-                    )}
-                  </td>
-                  <td className="p-3 text-right">
-                    <Link href={`/documents/${d.id}`} className="text-brand-700 text-sm">Open</Link>
-                  </td>
-                </tr>
-              );
-            })}
+            {docs.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-6 text-center text-sm text-gray-500">
+                  No documents yet. Upload your first one above.
+                </td>
+              </tr>
+            )}
+            {docs.map((d) => (
+              <tr key={d.id} className="border-t border-gray-100">
+                <td className="p-3 font-medium">{d.original_name ?? "Untitled"}</td>
+                <td className="p-3">{d.detected_type ?? "—"}</td>
+                <td className="p-3 text-gray-700">
+                  {d.checklist_item_id ? labelById.get(d.checklist_item_id) ?? "—" : "—"}
+                </td>
+                <td className="p-3 text-gray-600">{formatDate(d.uploaded_at)}</td>
+                <td className="p-3">
+                  <span
+                    className={
+                      d.status === "accepted"
+                        ? "badge-green"
+                        : d.status === "flagged"
+                        ? "badge-red"
+                        : d.status === "review"
+                        ? "badge-amber"
+                        : "badge-gray"
+                    }
+                  >
+                    {d.status}
+                  </span>
+                </td>
+                <td className="p-3 text-right">
+                  <Link href={`/documents/${d.id}`} className="text-brand-700 text-sm">
+                    Open
+                  </Link>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

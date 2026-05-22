@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { SAFETY } from "@/lib/safety";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const DEADLINE_RE = /(\b\d{4}-\d{2}-\d{2}\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4})/i;
+
+const Schema = z.object({
+  text: z.string().trim().min(10).max(20_000),
+});
 
 function detectType(text: string): { type: string; urgency: "low" | "medium" | "high" } {
   const t = text.toLowerCase();
@@ -20,10 +25,11 @@ function detectType(text: string): { type: string; urgency: "low" | "medium" | "
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const text: string = typeof body?.text === "string" ? body.text : "";
-    if (!text.trim()) {
-      return NextResponse.json({ error: "Notice text required." }, { status: 400 });
+    const parsed = Schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
     }
+    const text = parsed.data.text;
 
     const { type, urgency } = detectType(text);
     const deadlineMatch = text.match(DEADLINE_RE);

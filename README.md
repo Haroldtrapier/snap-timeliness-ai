@@ -23,12 +23,15 @@ and move cases forward — with humans in the loop.
 ```bash
 npm install
 cp .env.example .env.local
-# leave NEXT_PUBLIC_USE_MOCK_DATA=true for the sandbox demo
+# Fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+# SUPABASE_SERVICE_ROLE_KEY, and (optionally) ANTHROPIC_API_KEY or OPENAI_API_KEY.
+# Apply the migration in supabase/migrations to your Supabase project first.
 npm run dev
 ```
 
-The app boots at <http://localhost:3000> with mock data. No Supabase project is
-required for the demo.
+The app boots at <http://localhost:3000>. Without Supabase env, the auth,
+dashboard, documents, notices, deadlines, and settings routes will return
+a configuration error — set the env vars to bring the app to life.
 
 ## Lint, typecheck, build
 

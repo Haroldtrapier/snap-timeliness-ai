@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { SYSTEM_PROMPT, SAFETY } from "@/lib/safety";
+import { createClient } from "@/lib/supabase/server";
+import { appendConversation } from "@/lib/db/conversations";
+import { logAudit } from "@/lib/db/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Msg = { role: "user" | "assistant"; content: string };
+
+const Schema = z.object({
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().min(1).max(8000),
+      })
+    )
+    .min(1)
+    .max(40),
+});
 
 const BANNED = [
   "approved by ai",
@@ -43,17 +59,28 @@ function mockReply(userText: string): string {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const messages: Msg[] = Array.isArray(body?.messages) ? body.messages : [];
-    const last = messages[messages.length - 1];
-    if (!last || last.role !== "user" || typeof last.content !== "string") {
+    const parsed = Schema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
+    const messages: Msg[] = parsed.data.messages;
+    const last = messages[messages.length - 1]!;
+    if (last.role !== "user") {
+      return NextResponse.json({ error: "Last message must be from user" }, { status: 400 });
+    }
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
     let raw: string;
+    let model: string;
     if (anthropicKey) {
+      model = "claude-haiku-4-5-20251001";
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -62,45 +89,49 @@ export async function POST(req: Request) {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model,
           max_tokens: 600,
           system: SYSTEM_PROMPT,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-      if (!res.ok) {
-        raw = mockReply(last.content);
-      } else {
-        const data = await res.json();
-        raw = data?.content?.[0]?.text ?? mockReply(last.content);
-      }
+      raw = res.ok ? (await res.json())?.content?.[0]?.text ?? mockReply(last.content) : mockReply(last.content);
     } else if (openaiKey) {
+      model = "gpt-4o-mini";
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
-        headers: {
-          authorization: `Bearer ${openaiKey}`,
-          "content-type": "application/json",
-        },
+        headers: { authorization: `Bearer ${openaiKey}`, "content-type": "application/json" },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            ...messages.map((m) => ({ role: m.role, content: m.content })),
-          ],
+          model,
+          messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages.map((m) => ({ role: m.role, content: m.content }))],
           max_tokens: 600,
         }),
       });
-      if (!res.ok) {
-        raw = mockReply(last.content);
-      } else {
-        const data = await res.json();
-        raw = data?.choices?.[0]?.message?.content ?? mockReply(last.content);
-      }
+      raw = res.ok ? (await res.json())?.choices?.[0]?.message?.content ?? mockReply(last.content) : mockReply(last.content);
     } else {
+      model = "mock";
       raw = mockReply(last.content);
     }
 
     const reply = scrub(raw);
+
+    if (user) {
+      const fullThread: Msg[] = [...messages, { role: "assistant", content: reply }];
+      const saved = await appendConversation({
+        userId: user.id,
+        surface: "assistant",
+        messages: fullThread,
+        model,
+      });
+      await logAudit({
+        actorUserId: user.id,
+        action: "assistant_query",
+        entityType: "ai_conversation",
+        entityId: saved?.id ?? null,
+        metadata: { model, message_count: fullThread.length },
+      });
+    }
+
     return NextResponse.json({ reply, disclaimer: SAFETY.guidanceOnly });
   } catch (e) {
     return NextResponse.json({ error: "Something went wrong." }, { status: 500 });

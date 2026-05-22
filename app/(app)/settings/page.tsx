@@ -1,7 +1,14 @@
-import { mockProfile } from "@/lib/mock-data";
+import { redirect } from "next/navigation";
 import { Disclaimer } from "@/components/Disclaimer";
+import { getCurrentProfile } from "@/lib/db/profiles";
+import { SettingsForm } from "./settings-form";
 
-export default function SettingsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SettingsPage() {
+  const profile = await getCurrentProfile();
+  if (!profile) redirect("/login");
+
   return (
     <div className="space-y-4">
       <header>
@@ -10,38 +17,7 @@ export default function SettingsPage() {
       </header>
       <Disclaimer variant="compact" />
 
-      <form className="card card-pad grid md:grid-cols-2 gap-3">
-        <div>
-          <label className="label">Name</label>
-          <input className="input" defaultValue={mockProfile.name} />
-        </div>
-        <div>
-          <label className="label">Email</label>
-          <input className="input" type="email" defaultValue={mockProfile.email} />
-        </div>
-        <div>
-          <label className="label">State</label>
-          <input className="input" defaultValue={mockProfile.state} />
-        </div>
-        <div>
-          <label className="label">County</label>
-          <input className="input" defaultValue={mockProfile.county} />
-        </div>
-        <div>
-          <label className="label">Household size</label>
-          <input className="input" type="number" defaultValue={mockProfile.householdSize} />
-        </div>
-        <div>
-          <label className="label">Language</label>
-          <select className="input" defaultValue={mockProfile.language}>
-            <option value="en">English</option>
-            <option value="es">Español</option>
-          </select>
-        </div>
-        <div className="md:col-span-2">
-          <button type="button" className="btn-primary" disabled>Save (pilot)</button>
-        </div>
-      </form>
+      <SettingsForm profile={profile} />
 
       <div className="card card-pad">
         <h2 className="font-semibold">Privacy</h2>
