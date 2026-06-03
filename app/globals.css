@@ -1551,3 +1551,16 @@ a { color: inherit; text-decoration: none; }
 .hub-card h3 { font-size: 17px; font-weight: 600; color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 .hub-card p { font-size: 13.5px; color: var(--ink-3); margin: 0; line-height: 1.5; flex: 1; }
 .hub-go { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--green-2); }
+
+.auth-info {
+  background: var(--info-soft);
+  border: 1px solid var(--info-ring);
+  color: var(--navy-2);
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.auth-alt { font-size: 13px; color: var(--ink-3); margin: 16px 0 0; }
+.auth-alt a { color: var(--green-2); font-weight: 600; }
+.auth-alt a:hover { text-decoration: underline; }

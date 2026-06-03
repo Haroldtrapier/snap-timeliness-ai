@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { login } from "./actions";
+import { signup } from "@/app/login/actions";
 import { Icon } from "@/components/Icons";
 
 export const metadata: Metadata = {
-  title: "Sign in · SNAP AI",
+  title: "Create account · SNAP AI",
 };
 
 const ERRORS: Record<string, string> = {
   email: "Please enter a valid email address.",
-  auth: "Incorrect email or password.",
+  password: "Password must be at least 6 characters.",
+  auth: "We couldn't create that account. It may already exist.",
 };
 
-export default async function LoginPage({
+export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; info?: string; next?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const { error, info, next } = await searchParams;
+  const { error } = await searchParams;
 
   return (
     <div className="auth-page">
@@ -26,13 +27,13 @@ export default async function LoginPage({
           <div className="brand-mark" aria-hidden="true" />
           <div>
             <div>SNAP AI</div>
-            <span className="brand-sub">Sign in to your workspace</span>
+            <span className="brand-sub">Create your workspace</span>
           </div>
         </Link>
 
-        <h1 className="auth-title">Welcome back</h1>
+        <h1 className="auth-title">Create an account</h1>
         <p className="auth-sub">
-          Choose who you are and sign in. Applicants and recipients always have free access.
+          Free for applicants and recipients. Tell us who you are to set up the right workspace.
         </p>
 
         {error && (
@@ -40,17 +41,10 @@ export default async function LoginPage({
             {ERRORS[error] ?? "Something went wrong. Please try again."}
           </div>
         )}
-        {info === "confirm" && (
-          <div className="auth-info" role="status">
-            Check your email to confirm your account, then sign in.
-          </div>
-        )}
 
-        <form className="auth-form" action={login}>
-          {next && <input type="hidden" name="next" value={next} />}
-
+        <form className="auth-form" action={signup}>
           <fieldset className="auth-roles">
-            <legend className="sr-only">I am signing in as</legend>
+            <legend className="sr-only">I am signing up as</legend>
             <label className="auth-role">
               <input type="radio" name="role" value="applicant" defaultChecked />
               <span className="auth-role-body">
@@ -70,6 +64,11 @@ export default async function LoginPage({
           </fieldset>
 
           <label className="auth-field">
+            <span>Full name</span>
+            <input type="text" name="full_name" autoComplete="name" placeholder="Your name" />
+          </label>
+
+          <label className="auth-field">
             <span>Email</span>
             <input type="email" name="email" autoComplete="email" placeholder="you@example.org" required />
           </label>
@@ -79,23 +78,25 @@ export default async function LoginPage({
             <input
               type="password"
               name="password"
-              autoComplete="current-password"
-              placeholder="Your password"
+              autoComplete="new-password"
+              placeholder="At least 6 characters"
+              minLength={6}
+              required
             />
           </label>
 
           <button type="submit" className="btn btn-primary btn-lg auth-submit">
-            <Icon.Arrow /> Sign in
+            <Icon.Sprout /> Create account
           </button>
         </form>
 
         <p className="auth-alt">
-          New here? <Link href="/signup">Create an account</Link>
+          Already have an account? <Link href="/login">Sign in</Link>
         </p>
 
         <p className="auth-demo" role="note">
           <b>Preparation &amp; guidance only.</b> Final eligibility decisions are made by your state
-          SNAP agency. SNAP AI does not approve, deny, or replace caseworker judgment.
+          SNAP agency.
         </p>
       </div>
     </div>
