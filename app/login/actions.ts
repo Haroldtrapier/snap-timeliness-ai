@@ -7,6 +7,7 @@ import {
   SESSION_MAX_AGE,
   encodeSession,
   nameFromEmail,
+  userTypeFromRole,
   type Role,
 } from "@/lib/session";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -73,7 +74,12 @@ export async function signup(formData: FormData) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName || nameFromEmail(email, role), role } },
+      options: {
+        data: {
+          full_name: fullName || nameFromEmail(email, role),
+          user_type: userTypeFromRole(role),
+        },
+      },
     });
     if (error) {
       redirect("/signup?error=auth");

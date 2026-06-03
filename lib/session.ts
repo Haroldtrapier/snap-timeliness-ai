@@ -35,3 +35,17 @@ export function nameFromEmail(email: string, role: Role): string {
   if (!local) return role === "agency" ? "Agency User" : "Applicant";
   return local.replace(/[._-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+// The Supabase `profiles.user_type` enum (existing schema) is richer than the
+// two-surface routing the app needs. Map between them here.
+export type UserType = "applicant" | "recipient" | "navigator" | "county" | "state" | "admin";
+
+const AGENCY_USER_TYPES: ReadonlySet<string> = new Set(["county", "state", "admin"]);
+
+export function roleFromUserType(userType: string | null | undefined): Role {
+  return userType && AGENCY_USER_TYPES.has(userType) ? "agency" : "applicant";
+}
+
+export function userTypeFromRole(role: Role): UserType {
+  return role === "agency" ? "county" : "applicant";
+}
