@@ -11,6 +11,8 @@ export interface Session {
   email: string;
   name: string;
   role: Role;
+  /** Raw profiles.user_type (e.g. 'admin'); absent for the demo session. */
+  userType?: string;
 }
 
 export function encodeSession(session: Session): string {
@@ -27,6 +29,7 @@ export function decodeSession(value: string | undefined | null): Session | null 
         email: parsed.email,
         name: typeof parsed.name === "string" ? parsed.name : "",
         role: parsed.role,
+        userType: typeof parsed.userType === "string" ? parsed.userType : undefined,
       };
     }
     return null;

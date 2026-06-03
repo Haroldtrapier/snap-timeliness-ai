@@ -58,6 +58,7 @@ export async function getSession(): Promise<Session | null> {
       email: profile.email ?? user.email ?? "",
       name: profile.full_name ?? nameFromEmail(user.email ?? "", role),
       role,
+      userType: profile.user_type ?? undefined,
     };
   }
 
