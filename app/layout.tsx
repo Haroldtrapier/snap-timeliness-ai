@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google";
+import { getLocale } from "@/lib/i18n";
+import { localeDir } from "@/lib/i18n/config";
 import "./globals.css";
 
 // Self-hosted at build time via next/font (no CDN / external font requests).
@@ -55,10 +57,12 @@ export const viewport: Viewport = {
   themeColor: "#0d1b2e",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
   return (
     <html
-      lang="en"
+      lang={locale}
+      dir={localeDir(locale)}
       className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable}`}
     >
       <body>

@@ -1737,3 +1737,14 @@ a { color: inherit; text-decoration: none; }
 .bar-fill { height: 100%; border-radius: 999px; min-width: 2px; transition: width 0.3s; }
 .bar-count { font-size: 12px; color: var(--navy); text-align: right; }
 @media (max-width: 480px) { .bar-row { grid-template-columns: 90px 1fr 30px; } }
+
+/* === Locale switcher ========================================= */
+.utility-bar .inner .utility-right { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.locale-switcher { display: inline-flex; gap: 2px; }
+.locale-btn {
+  font-family: var(--font-mono), monospace; font-size: 11px;
+  color: rgba(255, 255, 255, 0.7); padding: 2px 7px; border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+.locale-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+.locale-btn.active { color: var(--navy); background: #fff; font-weight: 600; }
