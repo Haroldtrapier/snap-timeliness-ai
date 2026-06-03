@@ -58,3 +58,28 @@ export async function uploadDocument(formData: FormData) {
   revalidatePath("/app/applicant");
   redirect("/app/documents?ok=1");
 }
+
+// Remove an uploaded document: delete the storage object + the documents row,
+// and revert the checklist item to 'open' (lowering readiness again).
+export async function removeDocument(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (!isSupabaseConfigured || session.id === "demo") redirect("/app/documents");
+
+  const documentId = String(formData.get("document_id") ?? "");
+  const storagePath = String(formData.get("storage_path") ?? "");
+  const checklistItemId = String(formData.get("checklist_item_id") ?? "") || null;
+  if (!documentId || !storagePath) redirect("/app/documents");
+
+  const supabase = await createSupabaseServerClient();
+
+  await supabase.storage.from(BUCKET).remove([storagePath]);
+  await supabase.from("documents").delete().eq("id", documentId);
+  if (checklistItemId) {
+    await supabase.from("checklist_items").update({ status: "open" }).eq("id", checklistItemId);
+  }
+
+  revalidatePath("/app/documents");
+  revalidatePath("/app/applicant");
+  redirect("/app/documents?removed=1");
+}
