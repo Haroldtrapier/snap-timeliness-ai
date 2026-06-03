@@ -1,7 +1,11 @@
 import { Icon } from "@/components/Icons";
-import { AGENCY_DATA, STAGE_LABELS } from "@/lib/data";
+import { AGENCY_DATA, STAGE_LABELS, type AgencyMetric, type AgencyClient } from "@/lib/data";
 
-export default function AgencyDashboard() {
+export default function AgencyDashboard({
+  data = AGENCY_DATA,
+}: {
+  data?: { metrics: AgencyMetric[]; clients: AgencyClient[] };
+}) {
   return (
     <div className="preview-frame">
       <div className="preview-window-head">
@@ -86,7 +90,7 @@ export default function AgencyDashboard() {
           </div>
 
           <div className="metrics-row">
-            {AGENCY_DATA.metrics.map((m) => (
+            {data.metrics.map((m) => (
               <div className="metric" key={m.label}>
                 <div className="label mono">{m.label}</div>
                 <div className="value">
@@ -122,7 +126,7 @@ export default function AgencyDashboard() {
                 <span role="columnheader">Timeliness</span>
                 <span />
               </div>
-              {AGENCY_DATA.clients.map((c) => (
+              {data.clients.map((c) => (
                 <div className="pipeline-row" key={c.case} role="row">
                   <span />
                   <div className="client-cell">

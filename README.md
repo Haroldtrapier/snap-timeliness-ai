@@ -35,8 +35,16 @@ Requires Node.js 18.18+ (Node 20+ recommended).
 ```
 app/
   layout.tsx          # root layout, metadata, self-hosted fonts (next/font), skip link
-  page.tsx            # composes the landing page section order
+  page.tsx            # marketing landing page (composes the section order)
   globals.css         # the full design system (tokens + component CSS)
+  login/              # demo sign-in page + server actions (login/logout)
+  app/                # authenticated product area (gated by middleware.ts)
+    layout.tsx        #   app shell: top bar, role-aware nav, sign out
+    page.tsx          #   workspace hub
+    applicant/        #   /app/applicant — applicant dashboard
+    notice/           #   /app/notice — notice explainer
+    agency/           #   /app/agency — agency console
+middleware.ts         # gates /app/* — redirects unauthenticated users to /login
 components/
   Icons.tsx           # inline SVG icon set (typed)
   layout/             # Header (utility bar + nav), Footer
@@ -44,7 +52,21 @@ components/
   dashboards/         # ApplicantDashboard, NoticeExplainer, AgencyDashboard
 lib/
   data.ts             # typed sample data for the product previews
+  auth.ts             # session helpers (DEMO cookie session — swap for a real IdP)
+  repositories.ts     # async data-access layer (integration points for a real backend)
 ```
+
+### Authentication & data (current state)
+
+The authenticated product area under `/app` is real and navigable, but uses a
+**demo session** (`lib/auth.ts`): sign-in accepts any email with no password and
+sets an unsigned cookie. This is a scaffold, not production auth. Replace it with a
+real identity provider (Supabase Auth, Auth.js, or SSO/SAML for agency staff) — the
+route guards call only `getSession()` and the cookie name, so the swap is localized.
+
+Likewise, `lib/repositories.ts` resolves the in-memory fixtures from `lib/data.ts`
+behind async functions. Each is an integration point for a real, per-user,
+auth-scoped data source.
 
 ### Notes for production
 

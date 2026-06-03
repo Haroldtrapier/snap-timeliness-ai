@@ -1,5 +1,5 @@
 import { Icon } from "@/components/Icons";
-import { APPLICANT_DATA, STAGES, type DocStatus } from "@/lib/data";
+import { APPLICANT_DATA, STAGES, type DocStatus, type ApplicantProfile } from "@/lib/data";
 
 function Donut({ value, size = 88, stroke = 10 }: { value: number; size?: number; stroke?: number }) {
   const r = (size - stroke) / 2;
@@ -41,8 +41,14 @@ const ICON_CLASS: Record<DocStatus, string> = {
   pending: "pending",
 };
 
-export default function ApplicantDashboard({ compact = false }: { compact?: boolean }) {
-  const d = APPLICANT_DATA.applicant;
+export default function ApplicantDashboard({
+  data = APPLICANT_DATA.applicant,
+  compact = false,
+}: {
+  data?: ApplicantProfile;
+  compact?: boolean;
+}) {
+  const d = data;
   return (
     <div className="preview-frame">
       <div className="preview-window-head">
