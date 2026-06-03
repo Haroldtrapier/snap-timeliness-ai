@@ -696,3 +696,91 @@ export async function getDeadlines(userId?: string): Promise<DeadlineItem[]> {
     return [];
   }
 }
+
+// ------------------------------------------------------------------
+// Agency reports (supervisor analytics). RLS scopes snap_cases to the
+// caseworker's organization, so aggregates reflect just their org.
+// ------------------------------------------------------------------
+
+export interface AgencyReports {
+  total: number;
+  byStage: { stage: string; count: number }[];
+  aging: { label: string; count: number }[];
+  decidedTotal: number;
+  onTimeRate: number;
+  avgDays: number;
+  expedited: number;
+  backlog: number;
+}
+
+const STAGE_TITLE: Record<string, string> = {
+  exploring: "Exploring",
+  applying: "Applying",
+  pending: "Pending",
+  approved: "Approved",
+  recertifying: "Recertifying",
+  denied: "Denied",
+  reporting_change: "Reporting change",
+};
+
+export async function getAgencyReports(userId?: string): Promise<AgencyReports | null> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return null;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: cases } = await supabase
+      .from("snap_cases")
+      .select("stage, filed_at, decided_at, expedited")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (!cases) return null;
+
+    const stageCounts = new Map<string, number>();
+    const aging = [
+      { label: "0–7 days", count: 0 },
+      { label: "8–30 days", count: 0 },
+      { label: "31–60 days", count: 0 },
+      { label: "60+ days", count: 0 },
+    ];
+    let decidedTotal = 0;
+    let onTime = 0;
+    let daysSum = 0;
+    let expedited = 0;
+    let backlog = 0;
+
+    for (const c of cases) {
+      stageCounts.set(c.stage, (stageCounts.get(c.stage) ?? 0) + 1);
+      if (c.expedited) expedited += 1;
+
+      if (c.decided_at && c.filed_at) {
+        const days = (new Date(c.decided_at).getTime() - new Date(c.filed_at).getTime()) / DAY_MS;
+        decidedTotal += 1;
+        daysSum += days;
+        if (days <= 30) onTime += 1;
+      } else if (c.filed_at) {
+        const age = Math.floor((Date.now() - new Date(c.filed_at).getTime()) / DAY_MS);
+        if (age <= 7) aging[0].count += 1;
+        else if (age <= 30) aging[1].count += 1;
+        else if (age <= 60) aging[2].count += 1;
+        else aging[3].count += 1;
+        if (age > 30) backlog += 1;
+      }
+    }
+
+    const byStage = [...stageCounts.entries()]
+      .map(([stage, count]) => ({ stage: STAGE_TITLE[stage] ?? stage, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      total: cases.length,
+      byStage,
+      aging,
+      decidedTotal,
+      onTimeRate: decidedTotal ? (onTime / decidedTotal) * 100 : 0,
+      avgDays: decidedTotal ? daysSum / decidedTotal : 0,
+      expedited,
+      backlog,
+    };
+  } catch {
+    return null;
+  }
+}
