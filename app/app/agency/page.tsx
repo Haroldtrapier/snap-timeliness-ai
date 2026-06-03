@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default async function AgencyPage() {
   const session = await getSession();
-  const data = await getAgencyCaseload(session?.email);
+  const data = await getAgencyCaseload(session?.id);
 
   return (
     <div className="app-surface">

@@ -22,7 +22,7 @@ function nextParam(next: string): string {
 }
 
 function setDemoSession(store: Awaited<ReturnType<typeof cookies>>, email: string, role: Role) {
-  store.set(SESSION_COOKIE, encodeSession({ email, name: nameFromEmail(email, role), role }), {
+  store.set(SESSION_COOKIE, encodeSession({ id: "demo", email, name: nameFromEmail(email, role), role }), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
