@@ -113,34 +113,37 @@ export default async function ReviewQueuePage({
                       </div>
                       {doc.originalName && <div className="docs-cat mono">{doc.originalName}</div>}
                     </div>
-                    <div className="docs-actions">
-                      {signed[doc.storagePath] && (
-                        <a
-                          className="btn btn-ghost btn-tiny"
-                          href={signed[doc.storagePath]}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Icon.Eye /> View
-                        </a>
-                      )}
-                      <form action={reviewDocument}>
-                        <input type="hidden" name="document_id" value={doc.id} />
-                        <input type="hidden" name="checklist_item_id" value={doc.checklistItemId ?? ""} />
-                        <input type="hidden" name="decision" value="verify" />
-                        <button type="submit" className="btn btn-primary btn-tiny">
+                    <form action={reviewDocument} className="queue-review">
+                      <input type="hidden" name="document_id" value={doc.id} />
+                      <input type="hidden" name="client_id" value={client.clientId} />
+                      <input type="hidden" name="checklist_item_id" value={doc.checklistItemId ?? ""} />
+                      <input type="hidden" name="label" value={doc.label ?? doc.originalName ?? "document"} />
+                      <input
+                        className="queue-note"
+                        type="text"
+                        name="note"
+                        placeholder="Optional note to applicant…"
+                        aria-label="Note to applicant"
+                      />
+                      <div className="docs-actions">
+                        {signed[doc.storagePath] && (
+                          <a
+                            className="btn btn-ghost btn-tiny"
+                            href={signed[doc.storagePath]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Icon.Eye /> View
+                          </a>
+                        )}
+                        <button type="submit" name="decision" value="verify" className="btn btn-primary btn-tiny">
                           <Icon.Check /> Verify
                         </button>
-                      </form>
-                      <form action={reviewDocument}>
-                        <input type="hidden" name="document_id" value={doc.id} />
-                        <input type="hidden" name="checklist_item_id" value={doc.checklistItemId ?? ""} />
-                        <input type="hidden" name="decision" value="request" />
-                        <button type="submit" className="btn btn-ghost btn-tiny">
+                        <button type="submit" name="decision" value="request" className="btn btn-ghost btn-tiny">
                           Request re-upload
                         </button>
-                      </form>
-                    </div>
+                      </div>
+                    </form>
                   </div>
                 ))}
               </div>

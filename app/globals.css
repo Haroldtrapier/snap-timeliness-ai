@@ -1632,3 +1632,27 @@ a { color: inherit; text-decoration: none; }
 .qstatus.ok { background: var(--green-soft); color: var(--green-2); }
 .qstatus.bad { background: var(--red-soft); color: var(--red); }
 .qstatus.pending { background: var(--amber-soft); color: var(--amber); }
+
+/* === Caseworker messages (applicant view) ==================== */
+.casenotes { border-left: 3px solid var(--info); }
+.casenotes-head {
+  font-size: 11px; color: var(--info); text-transform: uppercase;
+  letter-spacing: 0.06em; margin-bottom: 8px;
+}
+.casenotes-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.casenotes-list li {
+  display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+  font-size: 13.5px; color: var(--navy); line-height: 1.45;
+}
+.casenotes-list time { font-size: 11px; color: var(--ink-4); flex-shrink: 0; }
+
+/* queue review form */
+.queue-review { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; min-width: 260px; }
+.queue-note {
+  font: inherit; font-size: 12.5px;
+  padding: 7px 10px; width: 100%;
+  border: 1px solid var(--border-strong); border-radius: 7px;
+  background: var(--surface); color: var(--ink);
+}
+.queue-note:focus-visible { outline: 2px solid var(--info); outline-offset: 1px; border-color: var(--info); }
+@media (max-width: 600px) { .queue-review { min-width: 0; width: 100%; align-items: stretch; } }

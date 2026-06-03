@@ -458,3 +458,37 @@ export async function getCaseworkerQueue(userId?: string): Promise<QueueClient[]
     return [];
   }
 }
+
+export interface CaseNote {
+  body: string;
+  createdAt: string;
+}
+
+/** Applicant-visible caseworker notes for the signed-in applicant. */
+export async function getApplicantCaseNotes(userId?: string): Promise<CaseNote[]> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return [];
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: client } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("owner_user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (!client) return [];
+
+    const { data } = await supabase
+      .from("case_notes")
+      .select("body, created_at, visibility")
+      .eq("client_id", client.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    return (data ?? [])
+      .filter((n) => n.visibility === "applicant_visible")
+      .map((n) => ({ body: n.body, createdAt: n.created_at }));
+  } catch {
+    return [];
+  }
+}
