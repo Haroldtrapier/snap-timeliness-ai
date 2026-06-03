@@ -1607,3 +1607,28 @@ a { color: inherit; text-decoration: none; }
 
 .docs-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 600px) { .docs-actions { width: 100%; justify-content: flex-start; } }
+
+/* === Caseworker review queue ================================= */
+.queue-list { display: flex; flex-direction: column; gap: 16px; }
+.queue-client {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+}
+.queue-client-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.queue-client-head .avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--navy); color: #fff;
+  display: grid; place-items: center; font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.queue-client-name { font-size: 15px; font-weight: 600; color: var(--navy); }
+.queue-client-loc { font-size: 11px; color: var(--ink-4); margin-top: 1px; }
+.qstatus {
+  font-family: var(--font-mono), monospace; font-size: 9.5px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 2px 7px; border-radius: 999px; margin-left: 4px;
+}
+.qstatus.ok { background: var(--green-soft); color: var(--green-2); }
+.qstatus.bad { background: var(--red-soft); color: var(--red); }
+.qstatus.pending { background: var(--amber-soft); color: var(--amber); }

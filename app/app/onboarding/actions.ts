@@ -51,6 +51,18 @@ export async function completeOnboarding(formData: FormData) {
     .single();
   if (clientErr || !client) redirect("/app/onboarding?error=save");
 
+  // Auto-link the client to its county DSS organization so the right
+  // caseworkers (org members) can see it. Applicants still own their data.
+  if (state && county) {
+    const { data: orgId } = await supabase.rpc("find_or_create_county_org", {
+      p_state: state,
+      p_county: county,
+    });
+    if (orgId) {
+      await supabase.from("clients").update({ organization_id: orgId }).eq("id", client.id);
+    }
+  }
+
   const { data: snapCase, error: caseErr } = await supabase
     .from("snap_cases")
     .insert({

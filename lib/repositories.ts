@@ -376,3 +376,85 @@ export async function getAgencyCaseload(userId?: string): Promise<AgencyCaseload
     return AGENCY_DATA;
   }
 }
+
+// ------------------------------------------------------------------
+// Caseworker review queue (agency side). RLS scopes everything to the
+// documents the signed-in caseworker may see (org membership via
+// is_org_member_of_client), so no explicit org filter is needed here.
+// ------------------------------------------------------------------
+
+export interface QueueDocument {
+  id: string;
+  status: string;
+  originalName: string | null;
+  storagePath: string;
+  uploadedAt: string;
+  checklistItemId: string | null;
+  label: string | null;
+}
+
+export interface QueueClient {
+  clientId: string;
+  name: string;
+  location: string;
+  documents: QueueDocument[];
+}
+
+function relValue<T>(rel: T | T[] | null): T | null {
+  return Array.isArray(rel) ? (rel[0] ?? null) : rel;
+}
+
+export async function getCaseworkerOrgCount(userId?: string): Promise<number> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return 0;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { count } = await supabase
+      .from("organization_members")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function getCaseworkerQueue(userId?: string): Promise<QueueClient[]> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return [];
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("documents")
+      .select(
+        "id, status, original_name, storage_path, uploaded_at, client_id, checklist_item_id, clients(full_name, county, state), checklist_items(label)",
+      )
+      .order("uploaded_at", { ascending: true });
+
+    const byClient = new Map<string, QueueClient>();
+    (data ?? []).forEach((d) => {
+      const client = relValue<{ full_name?: string; county?: string; state?: string }>(d.clients);
+      const item = relValue<{ label?: string }>(d.checklist_items);
+      if (!byClient.has(d.client_id)) {
+        const loc = [client?.county, client?.state].filter(Boolean).join(", ");
+        byClient.set(d.client_id, {
+          clientId: d.client_id,
+          name: client?.full_name ?? "Applicant",
+          location: loc,
+          documents: [],
+        });
+      }
+      byClient.get(d.client_id)!.documents.push({
+        id: d.id,
+        status: d.status,
+        originalName: d.original_name,
+        storagePath: d.storage_path,
+        uploadedAt: d.uploaded_at,
+        checklistItemId: d.checklist_item_id,
+        label: item?.label ?? null,
+      });
+    });
+
+    return [...byClient.values()];
+  } catch {
+    return [];
+  }
+}

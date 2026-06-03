@@ -29,6 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/app/documents">Documents</Link>
             <Link href="/app/notice">Notice explainer</Link>
             <Link href="/app/agency">Agency</Link>
+            <Link href="/app/agency/queue">Review queue</Link>
           </nav>
 
           <div className="app-bar-user">
