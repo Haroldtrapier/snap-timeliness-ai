@@ -38,10 +38,10 @@ function Nav() {
           <a href="#pilot">Pilot</a>
         </div>
         <div className="nav-cta">
-          <a className="btn btn-ghost btn-tiny" href="#cta">
+          <a className="btn btn-ghost btn-tiny" href="/login">
             Sign in
           </a>
-          <a className="btn btn-primary btn-tiny" href="#cta">
+          <a className="btn btn-primary btn-tiny" href="/login">
             Get SNAP Help
           </a>
         </div>
