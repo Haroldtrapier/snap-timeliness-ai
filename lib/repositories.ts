@@ -107,6 +107,78 @@ export async function getApplicantClientId(userId?: string): Promise<string | nu
   }
 }
 
+export interface ChecklistEntry {
+  id: string;
+  label: string;
+  category: string;
+  required: boolean;
+  status: string;
+  provided: boolean;
+}
+
+export interface ApplicantChecklist {
+  clientId: string;
+  caseId: string;
+  checklistId: string;
+  items: ChecklistEntry[];
+}
+
+/** The signed-in applicant's checklist with item ids, for the Documents page. */
+export async function getApplicantChecklist(userId?: string): Promise<ApplicantChecklist | null> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return null;
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    const { data: client } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("owner_user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (!client) return null;
+
+    const { data: snapCase } = await supabase
+      .from("snap_cases")
+      .select("id")
+      .eq("client_id", client.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!snapCase) return null;
+
+    const { data: checklist } = await supabase
+      .from("application_checklists")
+      .select("id")
+      .eq("case_id", snapCase.id)
+      .order("generated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!checklist) return null;
+
+    const { data: items } = await supabase
+      .from("checklist_items")
+      .select("id, label, category, required, status")
+      .eq("checklist_id", checklist.id);
+
+    return {
+      clientId: client.id,
+      caseId: snapCase.id,
+      checklistId: checklist.id,
+      items: (items ?? []).map((it) => ({
+        id: it.id,
+        label: it.label,
+        category: it.category,
+        required: it.required,
+        status: it.status,
+        provided: mapDocStatus(it.status) === "ok",
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getApplicantCase(userId?: string): Promise<ApplicantProfile> {
   if (!isSupabaseConfigured || !userId || userId === "demo") return APPLICANT_DATA.applicant;
 
