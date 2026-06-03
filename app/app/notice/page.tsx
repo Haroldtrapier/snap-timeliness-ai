@@ -57,8 +57,12 @@ export default async function NoticePage({
       {error && (
         <div className="auth-error" role="alert">
           {error === "short"
-            ? "Please paste the notice text (at least a sentence or two)."
-            : "Something went wrong saving your notice."}
+            ? "Please paste the notice text, or upload a PDF/photo of it."
+            : error === "size"
+              ? "That file is too large (max 8 MB)."
+              : error === "type"
+                ? "Please upload a PDF or an image file."
+                : "Something went wrong saving your notice."}
         </div>
       )}
       {!isAnthropicConfigured && (
@@ -75,11 +79,17 @@ export default async function NoticePage({
             <input type="text" name="title" placeholder="e.g. Request for verification" />
           </label>
           <label className="auth-field">
+            <span>Upload the notice (PDF or photo)</span>
+            <input type="file" name="file" accept="application/pdf,image/*" />
+          </label>
+          <div className="notice-or">
+            <span>or</span>
+          </div>
+          <label className="auth-field">
             <span>Paste the notice text</span>
             <textarea
               name="raw_text"
-              rows={8}
-              required
+              rows={7}
               placeholder="Paste the words from your county notice here…"
               className="notice-textarea"
             />
