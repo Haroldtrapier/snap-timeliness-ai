@@ -574,3 +574,87 @@ export async function getAdminData(
     return null;
   }
 }
+
+// ------------------------------------------------------------------
+// Notices (applicant notice-explainer). RLS scopes to the owner.
+// ------------------------------------------------------------------
+
+export interface NoticeListItem {
+  id: string;
+  title: string;
+  createdAt: string;
+  urgency: string | null;
+}
+
+export interface NoticeDetail {
+  id: string;
+  title: string;
+  rawText: string | null;
+  createdAt: string;
+  explanation: {
+    summary: string | null;
+    action: string | null;
+    deadline: string | null;
+    urgency: string | null;
+    questions: string[];
+  } | null;
+}
+
+export async function getNotices(userId?: string): Promise<NoticeListItem[]> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return [];
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("notices")
+      .select("id, title, created_at, notice_explanations(urgency)")
+      .order("created_at", { ascending: false })
+      .limit(25);
+    return (data ?? []).map((n) => {
+      const exp = relValue<{ urgency?: string }>(n.notice_explanations);
+      return { id: n.id, title: n.title, createdAt: n.created_at, urgency: exp?.urgency ?? null };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function getNotice(noticeId: string, userId?: string): Promise<NoticeDetail | null> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return null;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: n } = await supabase
+      .from("notices")
+      .select(
+        "id, title, raw_text, created_at, notice_explanations(summary, action, deadline, urgency, questions)",
+      )
+      .eq("id", noticeId)
+      .maybeSingle();
+    if (!n) return null;
+
+    const exp = relValue<{
+      summary?: string;
+      action?: string;
+      deadline?: string;
+      urgency?: string;
+      questions?: unknown;
+    }>(n.notice_explanations);
+
+    return {
+      id: n.id,
+      title: n.title,
+      rawText: n.raw_text,
+      createdAt: n.created_at,
+      explanation: exp
+        ? {
+            summary: exp.summary ?? null,
+            action: exp.action ?? null,
+            deadline: exp.deadline ?? null,
+            urgency: exp.urgency ?? null,
+            questions: Array.isArray(exp.questions) ? (exp.questions as string[]) : [],
+          }
+        : null,
+    };
+  } catch {
+    return null;
+  }
+}
