@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
-import { getApplicantChecklist } from "@/lib/repositories";
+import { getApplicantChecklist, getApplicantCaseNotes } from "@/lib/repositories";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Icon } from "@/components/Icons";
@@ -21,6 +21,7 @@ export default async function DocumentsPage({
   const { ok, removed, error } = await searchParams;
   const session = await getSession();
   const checklist = await getApplicantChecklist(session?.id);
+  const notes = await getApplicantCaseNotes(session?.id);
 
   const ready = checklist?.items.filter((i) => i.provided).length ?? 0;
   const total = checklist?.items.length ?? 0;
@@ -63,6 +64,20 @@ export default async function DocumentsPage({
       {error && (
         <div className="auth-error" role="alert">
           {error === "file" ? "Please choose a file to upload." : "Upload failed — please try again."}
+        </div>
+      )}
+
+      {notes.length > 0 && (
+        <div className="card casenotes" style={{ padding: 18, marginBottom: 16 }}>
+          <div className="casenotes-head mono">Messages from your caseworker</div>
+          <ul className="casenotes-list">
+            {notes.map((n, i) => (
+              <li key={i}>
+                <span>{n.body}</span>
+                <time className="mono">{new Date(n.createdAt).toLocaleDateString()}</time>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
