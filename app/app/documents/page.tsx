@@ -3,24 +3,42 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getApplicantChecklist } from "@/lib/repositories";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Icon } from "@/components/Icons";
-import { uploadDocument } from "./actions";
+import { uploadDocument, removeDocument } from "./actions";
 
 export const metadata: Metadata = {
   title: "Documents · SNAP AI",
 };
 
+const BUCKET = "snap-documents";
+
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ok?: string; error?: string }>;
+  searchParams: Promise<{ ok?: string; removed?: string; error?: string }>;
 }) {
-  const { ok, error } = await searchParams;
+  const { ok, removed, error } = await searchParams;
   const session = await getSession();
   const checklist = await getApplicantChecklist(session?.id);
 
   const ready = checklist?.items.filter((i) => i.provided).length ?? 0;
   const total = checklist?.items.length ?? 0;
+
+  // Short-lived signed URLs for the uploaded files (private bucket).
+  const signed: Record<string, string> = {};
+  if (checklist) {
+    const paths = checklist.items
+      .map((i) => i.document?.storagePath)
+      .filter((p): p is string => Boolean(p));
+    if (paths.length) {
+      const supabase = await createSupabaseServerClient();
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrls(paths, 600);
+      (data ?? []).forEach((s) => {
+        if (s.signedUrl && s.path) signed[s.path] = s.signedUrl;
+      });
+    }
+  }
 
   return (
     <div className="app-surface">
@@ -35,6 +53,11 @@ export default async function DocumentsPage({
       {ok && (
         <div className="auth-info" role="status">
           Uploaded. Your readiness has been updated.
+        </div>
+      )}
+      {removed && (
+        <div className="auth-info" role="status">
+          Document removed.
         </div>
       )}
       {error && (
@@ -81,10 +104,33 @@ export default async function DocumentsPage({
                     {item.label}
                     {item.required && <span className="docs-req">Required</span>}
                   </div>
-                  <div className="docs-cat mono">{item.category}</div>
+                  <div className="docs-cat mono">
+                    {item.category}
+                    {item.document?.originalName ? ` · ${item.document.originalName}` : ""}
+                  </div>
                 </div>
-                {item.provided ? (
-                  <span className="docs-status">Provided</span>
+
+                {item.provided && item.document ? (
+                  <div className="docs-actions">
+                    {signed[item.document.storagePath] && (
+                      <a
+                        className="btn btn-ghost btn-tiny"
+                        href={signed[item.document.storagePath]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Icon.Eye /> View
+                      </a>
+                    )}
+                    <form action={removeDocument}>
+                      <input type="hidden" name="document_id" value={item.document.id} />
+                      <input type="hidden" name="storage_path" value={item.document.storagePath} />
+                      <input type="hidden" name="checklist_item_id" value={item.id} />
+                      <button type="submit" className="btn btn-ghost btn-tiny">
+                        Remove
+                      </button>
+                    </form>
+                  </div>
                 ) : (
                   <form action={uploadDocument} className="docs-form">
                     <input type="hidden" name="client_id" value={checklist.clientId} />

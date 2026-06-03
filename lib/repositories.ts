@@ -107,6 +107,13 @@ export async function getApplicantClientId(userId?: string): Promise<string | nu
   }
 }
 
+export interface ChecklistDocument {
+  id: string;
+  storagePath: string;
+  originalName: string | null;
+  uploadedAt: string;
+}
+
 export interface ChecklistEntry {
   id: string;
   label: string;
@@ -114,6 +121,7 @@ export interface ChecklistEntry {
   required: boolean;
   status: string;
   provided: boolean;
+  document: ChecklistDocument | null;
 }
 
 export interface ApplicantChecklist {
@@ -161,6 +169,25 @@ export async function getApplicantChecklist(userId?: string): Promise<ApplicantC
       .select("id, label, category, required, status")
       .eq("checklist_id", checklist.id);
 
+    const { data: docs } = await supabase
+      .from("documents")
+      .select("id, checklist_item_id, storage_path, original_name, uploaded_at")
+      .eq("client_id", client.id)
+      .order("uploaded_at", { ascending: false });
+
+    // newest document per checklist item
+    const byItem = new Map<string, ChecklistDocument>();
+    (docs ?? []).forEach((d) => {
+      if (d.checklist_item_id && !byItem.has(d.checklist_item_id)) {
+        byItem.set(d.checklist_item_id, {
+          id: d.id,
+          storagePath: d.storage_path,
+          originalName: d.original_name,
+          uploadedAt: d.uploaded_at,
+        });
+      }
+    });
+
     return {
       clientId: client.id,
       caseId: snapCase.id,
@@ -172,6 +199,7 @@ export async function getApplicantChecklist(userId?: string): Promise<ApplicantC
         required: it.required,
         status: it.status,
         provided: mapDocStatus(it.status) === "ok",
+        document: byItem.get(it.id) ?? null,
       })),
     };
   } catch {
