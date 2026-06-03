@@ -9,6 +9,57 @@
 
 ---
 
+## 🖥️ Web Application (Marketing Site & Product Previews)
+
+This repository now includes the **production web application** — a
+[Next.js](https://nextjs.org) (App Router) site built from the design handoff. It
+presents the marketing site plus three interactive product previews (applicant
+dashboard, notice explainer, agency console).
+
+### Run locally
+
+```bash
+npm install
+npm run dev      # http://localhost:3000
+```
+
+```bash
+npm run build    # production build
+npm run start    # serve the production build
+```
+
+Requires Node.js 18.18+ (Node 20+ recommended).
+
+### Project structure
+
+```
+app/
+  layout.tsx          # root layout, metadata, self-hosted fonts (next/font), skip link
+  page.tsx            # composes the landing page section order
+  globals.css         # the full design system (tokens + component CSS)
+components/
+  Icons.tsx           # inline SVG icon set (typed)
+  layout/             # Header (utility bar + nav), Footer
+  sections/           # one file per landing section (Hero … FinalCTA, FAQ)
+  dashboards/         # ApplicantDashboard, NoticeExplainer, AgencyDashboard
+lib/
+  data.ts             # typed sample data for the product previews
+```
+
+### Notes for production
+
+- **Design tokens** live as CSS custom properties at the top of `app/globals.css`.
+- **Fonts** (Inter, Source Serif 4, JetBrains Mono) are self-hosted at build time via
+  `next/font` — no CDN requests.
+- **Accessibility**: skip link, focus-visible outlines, ARIA on the stage tracker,
+  pipeline table, FAQ accordion, and reduced-motion support. Continue hardening toward
+  WCAG 2.1 AA / Section 508 as required for a government-deployed tool.
+- All sample data (names, case numbers, `−38%`, `1,847 active cases`, the May 2026
+  calendar) is **fictional/illustrative**. Replace the `lib/data.ts` models and the
+  dashboards with real, auth-gated services before any production use.
+
+---
+
 ## 📋 What SNAP-AI Does
 
 SNAP-AI is built to help counties **clear Supplemental Nutrition Assistance Program (SNAP) application backlogs** through intelligent automation of eligibility processing. The system addresses the critical delays in SNAP benefit delivery by accelerating application review while maintaining strict compliance with federal and state regulations.
