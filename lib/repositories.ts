@@ -658,3 +658,39 @@ export async function getNotice(noticeId: string, userId?: string): Promise<Noti
     return null;
   }
 }
+
+// ------------------------------------------------------------------
+// Deadlines (applicant-managed). RLS "deadlines owner write" allows the
+// owner to insert/update; "deadlines via client" allows reads.
+// ------------------------------------------------------------------
+
+export interface DeadlineItem {
+  id: string;
+  type: string;
+  description: string | null;
+  dueAt: string;
+  suggestedNext: string | null;
+  resolved: boolean;
+}
+
+export async function getDeadlines(userId?: string): Promise<DeadlineItem[]> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return [];
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("deadlines")
+      .select("id, type, description, due_at, suggested_next, resolved_at")
+      .order("due_at", { ascending: true })
+      .limit(60);
+    return (data ?? []).map((d) => ({
+      id: d.id,
+      type: d.type,
+      description: d.description,
+      dueAt: d.due_at,
+      suggestedNext: d.suggested_next,
+      resolved: Boolean(d.resolved_at),
+    }));
+  } catch {
+    return [];
+  }
+}
