@@ -54,6 +54,7 @@ export async function getSession(): Promise<Session | null> {
 
     const role = roleFromUserType(profile.user_type);
     return {
+      id: user.id,
       email: profile.email ?? user.email ?? "",
       name: profile.full_name ?? nameFromEmail(user.email ?? "", role),
       role,

@@ -7,6 +7,7 @@ export const SESSION_MAX_AGE = 60 * 60 * 8; // 8 hours
 export type Role = "applicant" | "agency";
 
 export interface Session {
+  id: string;
   email: string;
   name: string;
   role: Role;
@@ -21,7 +22,12 @@ export function decodeSession(value: string | undefined | null): Session | null 
   try {
     const parsed = JSON.parse(Buffer.from(value, "base64url").toString());
     if (parsed && typeof parsed.email === "string" && (parsed.role === "applicant" || parsed.role === "agency")) {
-      return parsed as Session;
+      return {
+        id: typeof parsed.id === "string" ? parsed.id : "",
+        email: parsed.email,
+        name: typeof parsed.name === "string" ? parsed.name : "",
+        role: parsed.role,
+      };
     }
     return null;
   } catch {
