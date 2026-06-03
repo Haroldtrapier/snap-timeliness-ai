@@ -492,3 +492,85 @@ export async function getApplicantCaseNotes(userId?: string): Promise<CaseNote[]
     return [];
   }
 }
+
+// ------------------------------------------------------------------
+// Admin: organization membership management. Admins can read all orgs,
+// memberships, and profiles via RLS; grants/revokes go through the
+// admin-only SECURITY DEFINER RPCs.
+// ------------------------------------------------------------------
+
+export interface AdminMember {
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export interface AdminOrg {
+  id: string;
+  name: string;
+  state: string | null;
+  county: string | null;
+  members: AdminMember[];
+}
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  userType: string;
+}
+
+export interface AdminData {
+  orgs: AdminOrg[];
+  users: AdminUser[];
+}
+
+export async function getAdminData(
+  session: { id: string; userType?: string } | null,
+): Promise<AdminData | null> {
+  if (!isSupabaseConfigured || !session || session.userType !== "admin") return null;
+  try {
+    const supabase = await createSupabaseServerClient();
+
+    const { data: orgs } = await supabase
+      .from("organizations")
+      .select("id, name, state, county")
+      .order("name", { ascending: true });
+
+    const { data: members } = await supabase
+      .from("organization_members")
+      .select("organization_id, user_id, role, profiles(full_name, email)");
+
+    const { data: users } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, user_type")
+      .order("email", { ascending: true });
+
+    const byOrg = new Map<string, AdminMember[]>();
+    (members ?? []).forEach((m) => {
+      const p = relValue<{ full_name?: string; email?: string }>(m.profiles);
+      const arr = byOrg.get(m.organization_id) ?? [];
+      arr.push({ userId: m.user_id, name: p?.full_name ?? "", email: p?.email ?? "", role: m.role });
+      byOrg.set(m.organization_id, arr);
+    });
+
+    return {
+      orgs: (orgs ?? []).map((o) => ({
+        id: o.id,
+        name: o.name,
+        state: o.state,
+        county: o.county,
+        members: byOrg.get(o.id) ?? [],
+      })),
+      users: (users ?? []).map((u) => ({
+        id: u.id,
+        name: u.full_name ?? "",
+        email: u.email ?? "",
+        userType: u.user_type,
+      })),
+    };
+  } catch {
+    return null;
+  }
+}

@@ -1656,3 +1656,28 @@ a { color: inherit; text-decoration: none; }
 }
 .queue-note:focus-visible { outline: 2px solid var(--info); outline-offset: 1px; border-color: var(--info); }
 @media (max-width: 600px) { .queue-review { min-width: 0; width: 100%; align-items: stretch; } }
+
+/* === Admin ================================================== */
+.admin-inline-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.admin-inline-form input, .admin-inline-form select {
+  font: inherit; font-size: 13px;
+  padding: 8px 10px; border: 1px solid var(--border-strong);
+  border-radius: 7px; background: var(--surface); color: var(--ink);
+}
+.admin-inline-form input:focus-visible, .admin-inline-form select:focus-visible {
+  outline: 2px solid var(--info); outline-offset: 1px; border-color: var(--info);
+}
+.admin-orgs { display: flex; flex-direction: column; gap: 14px; }
+.admin-org-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.admin-org-name { font-size: 15px; font-weight: 600; color: var(--navy); }
+.admin-org-loc { font-size: 11px; color: var(--ink-4); margin-top: 1px; }
+.admin-org-count { font-size: 11px; color: var(--ink-3); }
+.admin-members { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 6px; }
+.admin-members li {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 8px 10px; background: var(--surface-2);
+  border: 1px solid var(--border-soft); border-radius: 8px;
+}
+.admin-member-id { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; color: var(--navy); }
+.admin-member-id .mono { font-size: 10.5px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.05em; }
+.admin-grant { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
