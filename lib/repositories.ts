@@ -590,6 +590,7 @@ export interface NoticeDetail {
   id: string;
   title: string;
   rawText: string | null;
+  storagePath: string | null;
   createdAt: string;
   explanation: {
     summary: string | null;
@@ -625,7 +626,7 @@ export async function getNotice(noticeId: string, userId?: string): Promise<Noti
     const { data: n } = await supabase
       .from("notices")
       .select(
-        "id, title, raw_text, created_at, notice_explanations(summary, action, deadline, urgency, questions)",
+        "id, title, raw_text, storage_path, created_at, notice_explanations(summary, action, deadline, urgency, questions)",
       )
       .eq("id", noticeId)
       .maybeSingle();
@@ -643,6 +644,7 @@ export async function getNotice(noticeId: string, userId?: string): Promise<Noti
       id: n.id,
       title: n.title,
       rawText: n.raw_text,
+      storagePath: n.storage_path ?? null,
       createdAt: n.created_at,
       explanation: exp
         ? {

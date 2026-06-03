@@ -39,7 +39,13 @@ const SCHEMA = {
   required: ["summary", "urgency", "deadline", "action", "questions"],
 };
 
-export async function explainNotice(rawText: string): Promise<NoticeExplanation | null> {
+// Content blocks for the user turn (text, image, or PDF document).
+type UserBlock =
+  | { type: "text"; text: string }
+  | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
+  | { type: "document"; source: { type: "base64"; media_type: "application/pdf"; data: string } };
+
+async function runExplain(content: UserBlock[]): Promise<NoticeExplanation | null> {
   if (!isAnthropicConfigured) return null;
   try {
     const client = new Anthropic();
@@ -51,12 +57,7 @@ export async function explainNotice(rawText: string): Promise<NoticeExplanation 
       thinking: { type: "adaptive" },
       system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
       output_config: { format: { type: "json_schema", schema: SCHEMA } },
-      messages: [
-        {
-          role: "user",
-          content: `Explain this SNAP notice for the person who received it.\n\n<notice>\n${rawText.slice(0, 20000)}\n</notice>`,
-        },
-      ],
+      messages: [{ role: "user", content }],
     } as Anthropic.Messages.MessageCreateParamsNonStreaming);
 
     const textBlock = response.content.find((b) => b.type === "text");
@@ -78,4 +79,29 @@ export async function explainNotice(rawText: string): Promise<NoticeExplanation 
   } catch {
     return null;
   }
+}
+
+export function explainNotice(rawText: string): Promise<NoticeExplanation | null> {
+  return runExplain([
+    {
+      type: "text",
+      text: `Explain this SNAP notice for the person who received it.\n\n<notice>\n${rawText.slice(0, 20000)}\n</notice>`,
+    },
+  ]);
+}
+
+// Read an uploaded notice (PDF or image) directly via the model's vision/document support.
+export function explainNoticeFromFile(
+  base64: string,
+  mediaType: string,
+): Promise<NoticeExplanation | null> {
+  const fileBlock: UserBlock =
+    mediaType === "application/pdf"
+      ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }
+      : { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } };
+
+  return runExplain([
+    fileBlock,
+    { type: "text", text: "Read the attached SNAP notice and explain it for the person who received it." },
+  ]);
 }

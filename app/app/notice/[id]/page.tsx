@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { getNotice } from "@/lib/repositories";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Icon } from "@/components/Icons";
+
+const BUCKET = "snap-documents";
 
 export const metadata: Metadata = {
   title: "Notice · SNAP AI",
@@ -42,6 +45,13 @@ export default async function NoticeDetailPage({
   }
 
   const exp = notice.explanation;
+
+  let originalUrl: string | null = null;
+  if (notice.storagePath) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.storage.from(BUCKET).createSignedUrl(notice.storagePath, 600);
+    originalUrl = data?.signedUrl ?? null;
+  }
 
   return (
     <div className="app-surface">
@@ -116,6 +126,18 @@ export default async function NoticeDetailPage({
             explainer may not be configured).
           </p>
         </div>
+      )}
+
+      {originalUrl && (
+        <a
+          className="btn btn-ghost btn-tiny"
+          href={originalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ marginBottom: 12 }}
+        >
+          <Icon.Doc /> View the original notice
+        </a>
       )}
 
       {notice.rawText && (

@@ -1717,3 +1717,12 @@ a { color: inherit; text-decoration: none; }
 .deadline-type { font-size: 14px; font-weight: 600; color: var(--navy); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .deadline-desc { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
 .deadline-next { font-size: 11px; color: var(--green-2); margin-top: 3px; }
+
+.notice-or {
+  display: flex; align-items: center; text-align: center;
+  color: var(--ink-4); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.notice-or::before, .notice-or::after {
+  content: ""; flex: 1; height: 1px; background: var(--border);
+}
+.notice-or span { padding: 0 12px; }
