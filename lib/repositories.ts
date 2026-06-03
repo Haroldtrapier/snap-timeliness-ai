@@ -89,6 +89,24 @@ function relativeWhen(due: Date): string {
   return `in ${days} days`;
 }
 
+/** The client row id owned by this user, or null. Used to gate onboarding. */
+export async function getApplicantClientId(userId?: string): Promise<string | null> {
+  if (!isSupabaseConfigured || !userId || userId === "demo") return null;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("owner_user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    return data?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getApplicantCase(userId?: string): Promise<ApplicantProfile> {
   if (!isSupabaseConfigured || !userId || userId === "demo") return APPLICANT_DATA.applicant;
 

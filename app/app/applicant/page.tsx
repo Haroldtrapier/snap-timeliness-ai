@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import ApplicantDashboard from "@/components/dashboards/ApplicantDashboard";
 import { getSession } from "@/lib/auth";
-import { getApplicantCase } from "@/lib/repositories";
+import { getApplicantCase, getApplicantClientId } from "@/lib/repositories";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const metadata: Metadata = {
   title: "My application · SNAP AI",
@@ -9,6 +11,14 @@ export const metadata: Metadata = {
 
 export default async function ApplicantPage() {
   const session = await getSession();
+
+  // Real applicants without a client row yet are sent to onboarding so they
+  // generate their own data (rather than seeing the illustrative fixtures).
+  if (isSupabaseConfigured && session?.role === "applicant" && session.id !== "demo") {
+    const clientId = await getApplicantClientId(session.id);
+    if (!clientId) redirect("/app/onboarding");
+  }
+
   const data = await getApplicantCase(session?.id);
 
   return (
