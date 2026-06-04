@@ -30,3 +30,6 @@ next-env.d.ts
 # editor
 .vscode/
 .idea/
+
+# Local secrets for scripts/sync-env.sh (do not commit)
+.env.production
