@@ -18,7 +18,7 @@ const NAV = [
 ];
 
 export default function BacklogNav() {
-  const { state, setActiveCounty, setRole, alerts } = useBacklog();
+  const { state, setActiveCounty, setRole, alerts, backed } = useBacklog();
   const pathname = usePathname() || "";
   const critical = alerts.filter((a) => a.severity === "Critical" || a.severity === "High").length;
   const isActive = (href: string) => (href === BASE ? pathname === BASE : pathname.startsWith(href));
@@ -32,6 +32,9 @@ export default function BacklogNav() {
         </Link>
       ))}
       <span className="grow" />
+      <span className={`bk-badge ${backed ? "bk-b-green" : "bk-b-gray"}`} title={backed ? "Persisting to Supabase" : "Local demo data (no Supabase keys)"}>
+        {backed ? "Live" : "Demo"}
+      </span>
       <select className="bk-select" value={state.activeCountyId} onChange={(e) => setActiveCounty(e.target.value)} aria-label="County">
         {state.counties.map((c) => (
           <option key={c.id} value={c.id}>

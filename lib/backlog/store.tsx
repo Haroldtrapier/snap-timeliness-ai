@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AuditAction,
   AuditEntry,
@@ -16,8 +16,10 @@ import { toView } from "@/lib/backlog/derive";
 import { computeMetrics, weeklyTrend, type CountyMetrics } from "@/lib/backlog/metrics";
 import { computeAlerts } from "@/lib/backlog/alerts";
 import { rowsToCases, type ImportRow } from "@/lib/backlog/csv";
+import type { BacklogAction } from "@/lib/backlog/actions";
 
 const STORAGE_KEY = "snap_backlog_state_v1";
+const API = "/app/agency/backlog/api";
 
 function loadState(): BacklogState {
   if (typeof window !== "undefined") {
@@ -34,7 +36,7 @@ function loadState(): BacklogState {
   return makeSeedState();
 }
 
-function persist(state: BacklogState) {
+function persistLocal(state: BacklogState) {
   if (typeof window !== "undefined") {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -52,6 +54,7 @@ function uid(prefix: string) {
 
 interface BacklogContextValue {
   ready: boolean;
+  backed: boolean;
   state: BacklogState;
   now: Date;
   views: CaseView[];
@@ -91,14 +94,43 @@ function makeAudit(s: BacklogState, action: AuditAction, caseId: string, extra: 
 export function BacklogProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<BacklogState | null>(null);
   const [now, setNow] = useState<Date>(() => new Date());
+  const [backed, setBacked] = useState(false);
+  const backedRef = useRef(false);
 
   useEffect(() => {
-    setState(loadState());
-    setNow(new Date());
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(API, { cache: "no-store" });
+        const json = await res.json();
+        if (!cancelled && json?.backed && json?.state) {
+          backedRef.current = true;
+          setBacked(true);
+          setState(json.state as BacklogState);
+          setNow(new Date());
+          return;
+        }
+      } catch {
+        /* fall through to local demo */
+      }
+      if (!cancelled) {
+        setState(loadState());
+        setNow(new Date());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Fire-and-forget server sync; a reload re-hydrates from the server of record.
+  const sync = useCallback((action: BacklogAction) => {
+    if (!backedRef.current) return;
+    void fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(action) }).catch(() => {});
   }, []);
 
   const commit = useCallback((next: BacklogState) => {
-    persist(next);
+    if (!backedRef.current) persistLocal(next);
     setState(next);
   }, []);
 
@@ -113,7 +145,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
         const cases = [...prev.cases];
         cases[idx] = after;
         const next: BacklogState = { ...prev, cases, audit: [...audits(after, before), ...prev.audit] };
-        persist(next);
+        if (!backedRef.current) persistLocal(next);
         return next;
       });
     },
@@ -132,6 +164,7 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
 
     return {
       ready: true,
+      backed,
       state,
       now,
       views,
@@ -158,9 +191,10 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
           ),
         ];
         commit({ ...state, cases: [...newCases, ...state.cases], audit: [...audit, ...state.audit] });
+        sync({ kind: "import", cases: newCases });
         return newCases.length;
       },
-      assignWorker: (caseId, workerId) =>
+      assignWorker: (caseId, workerId) => {
         mutateCase(
           caseId,
           (c) => ({ ...c, assignedWorkerId: workerId }),
@@ -171,14 +205,18 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
               next: state.workers.find((w) => w.id === workerId)?.name || "Unassigned",
             }),
           ],
-        ),
-      setStatus: (caseId, status) =>
+        );
+        sync({ kind: "assignWorker", caseExternalId: caseId, workerId });
+      },
+      setStatus: (caseId, status) => {
         mutateCase(
           caseId,
           (c) => ({ ...c, status }),
           (after, before) => [makeAudit(state, "Status changed", caseId, { countyId: after.countyId, prev: before.status, next: status })],
-        ),
-      setDocStatus: (caseId, docKey, status) =>
+        );
+        sync({ kind: "setStatus", caseExternalId: caseId, status });
+      },
+      setDocStatus: (caseId, docKey, status) => {
         mutateCase(
           caseId,
           (c) => ({
@@ -198,24 +236,36 @@ export function BacklogProvider({ children }: { children: React.ReactNode }) {
               }),
             ];
           },
-        ),
-      addNote: (caseId, text) =>
+        );
+        sync({ kind: "setDocStatus", caseExternalId: caseId, docKey, status, by: state.currentUser });
+      },
+      addNote: (caseId, text) => {
         mutateCase(
           caseId,
           (c) => ({ ...c, notes: [{ id: uid("note"), at: new Date().toISOString(), by: state.currentUser, text }, ...c.notes] }),
           (after) => [makeAudit(state, "Note added", caseId, { countyId: after.countyId, next: text.slice(0, 80) })],
-        ),
-      closeCase: (caseId) =>
+        );
+        sync({ kind: "addNote", caseExternalId: caseId, text, author: state.currentUser });
+      },
+      closeCase: (caseId) => {
         mutateCase(
           caseId,
           (c) => ({ ...c, status: "Completed" }),
           (after, before) => [makeAudit(state, "Case reviewed/closed", caseId, { countyId: after.countyId, prev: before.status, next: "Completed" })],
-        ),
-      logAudit: (action, caseId, extra) => commit({ ...state, audit: [makeAudit(state, action, caseId, extra), ...state.audit] }),
+        );
+        sync({ kind: "closeCase", caseExternalId: caseId });
+      },
+      logAudit: (action, caseId, extra) => {
+        commit({ ...state, audit: [makeAudit(state, action, caseId, extra), ...state.audit] });
+        sync({ kind: "audit", action, caseExternalId: caseId, countyId: extra?.countyId, prev: extra?.prev, next: extra?.next, systemNote: extra?.systemNote, automated: extra?.automated });
+      },
       updatePrescreenConfig: (newCfg) => commit({ ...state, prescreenConfig: newCfg }),
-      resetDemo: () => commit(makeSeedState(new Date())),
+      resetDemo: () => {
+        if (backedRef.current) return; // demo-only affordance
+        commit(makeSeedState(new Date()));
+      },
     };
-  }, [state, now, commit, mutateCase]);
+  }, [state, now, backed, commit, mutateCase, sync]);
 
   if (!value) {
     return (
