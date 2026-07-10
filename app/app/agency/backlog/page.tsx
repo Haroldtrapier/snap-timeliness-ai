@@ -24,6 +24,7 @@ export default function BacklogDashboard() {
         <div className="bk-row">
           <Link href={`${BASE}/upload`} className="bk-btn">Upload cases</Link>
           <Link href={`${BASE}/queue`} className="bk-btn ghost">Priority queue</Link>
+          <Link href="/app/agency/queue" className="bk-btn subtle" title="Document-level case review">Review queue →</Link>
         </div>
       </div>
 
