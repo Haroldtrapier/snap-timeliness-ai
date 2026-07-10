@@ -1,0 +1,101 @@
+/* SNAP AI — Backlog Command Center. Scoped under .bk-root to avoid collisions. */
+.bk-root {
+  --bk-panel: #ffffff;
+  --bk-ink: #0f172a;
+  --bk-muted: #64748b;
+  --bk-line: #e2e8f0;
+  --bk-blue: #1d4ed8;
+  color: var(--bk-ink);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.bk-loading { display: grid; place-items: center; min-height: 40vh; gap: 14px; color: #475569; }
+.bk-spinner { width: 32px; height: 32px; border-radius: 50%; border: 4px solid #dbeafe; border-top-color: #1d4ed8; animation: bk-spin 0.9s linear infinite; }
+@keyframes bk-spin { to { transform: rotate(360deg); } }
+
+.bk-subnav { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; background: #fff; border: 1px solid var(--bk-line); border-radius: 14px; padding: 8px; }
+.bk-subnav a { padding: 8px 12px; border-radius: 9px; font-size: 13px; font-weight: 600; color: #475569; }
+.bk-subnav a:hover { background: #f1f5f9; color: #1d4ed8; }
+.bk-subnav a.active { background: #1d4ed8; color: #fff; }
+.bk-subnav .grow { flex: 1; }
+
+.bk-select { border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 11px; background: #fff; font-weight: 600; color: #0f172a; font-size: 13px; }
+.bk-pagehead { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.bk-h1 { font-size: 24px; margin: 0; font-weight: 800; }
+.bk-sub { color: var(--bk-muted); margin: 4px 0 0; }
+
+.bk-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.bk-card { background: var(--bk-panel); border: 1px solid var(--bk-line); border-radius: 16px; padding: 16px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04); }
+.bk-card.click { cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
+.bk-card.click:hover { box-shadow: 0 10px 26px rgba(29, 78, 216, 0.12); transform: translateY(-1px); }
+.bk-stat-label { color: var(--bk-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+.bk-stat-value { font-size: 28px; font-weight: 800; margin-top: 6px; }
+.bk-stat-note { color: var(--bk-muted); font-size: 12px; margin-top: 4px; }
+.bk-panel { background: var(--bk-panel); border: 1px solid var(--bk-line); border-radius: 16px; padding: 18px; }
+.bk-panel h2 { margin: 0 0 12px; font-size: 17px; }
+.bk-two { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+.bk-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.bk-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.bk-btn { border: 0; background: var(--bk-blue); color: #fff; border-radius: 10px; padding: 9px 14px; font-weight: 700; cursor: pointer; font-size: 13px; }
+.bk-btn:hover { background: #1e40af; }
+.bk-btn.ghost { background: #e0e7ff; color: #1e40af; }
+.bk-btn.subtle { background: #f1f5f9; color: #334155; }
+.bk-btn.danger { background: #fee2e2; color: #991b1b; }
+.bk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.bk-input, .bk-textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 9px 12px; background: #fff; font-size: 14px; }
+.bk-textarea { min-height: 80px; resize: vertical; }
+.bk-label { font-size: 12px; font-weight: 700; color: #334155; display: grid; gap: 6px; }
+.bk-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.bk-note { font-size: 12px; color: var(--bk-muted); }
+
+.bk-table-wrap { overflow: auto; border: 1px solid var(--bk-line); border-radius: 14px; background: #fff; }
+.bk-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.bk-table th, .bk-table td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--bk-line); font-size: 13px; vertical-align: top; }
+.bk-table th { background: #f8fafc; color: #475569; font-weight: 700; white-space: nowrap; }
+.bk-table tbody tr:hover { background: #f8fafc; cursor: pointer; }
+.bk-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.bk-badge { display: inline-block; border-radius: 999px; padding: 3px 9px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.bk-b-blue { background: #dbeafe; color: #1e40af; }
+.bk-b-green { background: #dcfce7; color: #166534; }
+.bk-b-amber { background: #fef3c7; color: #92400e; }
+.bk-b-red { background: #fee2e2; color: #991b1b; }
+.bk-b-gray { background: #e2e8f0; color: #334155; }
+.bk-b-purple { background: #ede9fe; color: #6d28d9; }
+.bk-b-cyan { background: #cffafe; color: #155e75; }
+.bk-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.bk-score { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.bk-disclaimer { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 12px; padding: 10px 14px; font-size: 13px; display: flex; gap: 8px; align-items: flex-start; }
+.bk-ic { font-weight: 800; }
+
+.bk-prbar { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; min-width: 90px; }
+.bk-prbar-fill { height: 100%; border-radius: 999px; }
+
+.bk-alert { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--bk-line); background: #fff; }
+.bk-alert.sev-Critical { border-left: 4px solid #dc2626; }
+.bk-alert.sev-High { border-left: 4px solid #ea580c; }
+.bk-alert.sev-Medium { border-left: 4px solid #d97706; }
+.bk-alert.sev-Low { border-left: 4px solid #64748b; }
+
+.bk-doc { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bk-line); flex-wrap: wrap; }
+.bk-doc:last-child { border-bottom: 0; }
+.bk-doclabel { font-weight: 600; }
+
+.bk-feed { display: grid; gap: 10px; }
+.bk-feeditem { display: grid; gap: 2px; padding-left: 14px; border-left: 2px solid #cbd5e1; }
+.bk-feeditem .when { font-size: 11px; color: var(--bk-muted); }
+
+.bk-report { background: #fff; border: 1px solid var(--bk-line); border-radius: 12px; padding: 28px; }
+.bk-report h1 { margin: 0 0 4px; }
+.bk-report .rmeta { color: var(--bk-muted); font-size: 13px; }
+@media print {
+  .app-bar, .bk-subnav, .bk-noprint { display: none !important; }
+  .bk-report { border: 0; padding: 0; }
+}
+
+@media (max-width: 900px) {
+  .bk-two { grid-template-columns: 1fr; }
+}

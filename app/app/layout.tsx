@@ -30,6 +30,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/app/deadlines">Deadlines</Link>
             <Link href="/app/notice">Notice explainer</Link>
             <Link href="/app/agency">Agency</Link>
+            <Link href="/app/agency/backlog">Backlog AI</Link>
             <Link href="/app/agency/queue">Review queue</Link>
             <Link href="/app/agency/reports">Reports</Link>
             {session.userType === "admin" && <Link href="/app/admin">Admin</Link>}
