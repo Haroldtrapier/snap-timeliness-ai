@@ -1,0 +1,17 @@
+# Media hosts that Claude Code web sessions need to reach (for ffmpeg pulls, etc.)
+#
+# The session-start hook (.claude/hooks/session-start.sh) probes each host listed
+# here and reports whether it is reachable under the environment's network policy.
+#
+# IMPORTANT: listing a host here does NOT grant access. Egress is controlled by the
+# environment's network policy, which is fixed when a session starts. To actually
+# reach these hosts you must add them to the environment's allowlist and then start
+# a FRESH session (an already-running session will not pick up the policy change).
+#
+# Format: one host per line. Bare hostname (no scheme/path). '#' starts a comment.
+# Probe assumes https (443). Append ":80" to a host to probe http instead.
+#
+# Replace the examples below with your real media/asset hosts, e.g.:
+# d8j0ntlcm91z4.cloudfront.net
+# assets.example-audio-host.com
+# cdn.example-audio-host.net
