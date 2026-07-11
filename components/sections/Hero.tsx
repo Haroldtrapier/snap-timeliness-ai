@@ -1,6 +1,7 @@
 import { Icon } from "@/components/Icons";
 import { getMessages } from "@/lib/i18n";
 import { media } from "@/lib/media";
+import { Photo } from "@/components/Photo";
 
 export default async function Hero() {
   const m = await getMessages();
@@ -37,8 +38,14 @@ export default async function Hero() {
 
         <figure className="media-frame hero-media">
           <div className="media-fallback" style={{ background: media.hero.fallback }} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={media.hero.src} alt={media.hero.alt} width={2752} height={1536} />
+          <Photo
+            local={media.hero.local}
+            cdn={media.hero.cdn}
+            alt={media.hero.alt}
+            width={2752}
+            height={1536}
+            loading="eager"
+          />
           <div className="media-scrim" aria-hidden="true" />
           <figcaption className="media-chip">
             <Icon.Sprout />

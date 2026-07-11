@@ -85,11 +85,19 @@ auth-scoped data source.
 The landing page uses four editorial photographs (hero food-distribution scene,
 applicant kitchen table, caseworker workspace, and a civic-building trust band).
 They were generated with **Higgsfield** and are referenced from a central manifest
-in [`lib/media.ts`](lib/media.ts), which pairs each image with a CSS gradient
-**fallback** so every media surface still reads as intentional if an asset URL is
-unavailable. The shared `.media-frame` / `.trust-band` styles live at the bottom of
-`app/globals.css`. To fully self-host, download each `src` in `lib/media.ts` into
-`public/img/` and swap the URLs for local paths.
+in [`lib/media.ts`](lib/media.ts). Each entry lists a **`local`** self-hosted path
+and a **`cdn`** URL. The [`<Photo/>`](components/Photo.tsx) component prefers `local`
+and transparently falls back to `cdn` on error, and a CSS gradient sits behind every
+image — so the site looks correct **before and after** self-hosting, and even if no
+source resolves. The shared `.media-frame` / `.trust-band` styles live at the bottom
+of `app/globals.css`; the hero image is also the Open Graph / Twitter share image.
+
+To self-host (recommended for production), run the download snippet documented at the
+top of `lib/media.ts` — it fetches each `cdn` URL into `public/img/` using the exact
+`local` filename — then commit `public/img/`. No code change is required; `<Photo/>`
+will serve the local files automatically. **Note:** the CDN host is outside this
+build environment's egress allow-list, so run the download from a network that can
+reach it.
 
 ---
 

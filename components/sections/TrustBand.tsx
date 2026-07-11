@@ -1,4 +1,5 @@
 import { media } from "@/lib/media";
+import { Photo } from "@/components/Photo";
 
 const STATS: { num: string; accent?: string; lbl: string }[] = [
   { num: "30", accent: "-day", lbl: "Federal timeliness standard SNAP AI is built to protect" },
@@ -12,8 +13,7 @@ export default function TrustBand() {
   return (
     <section className="trust-band" data-screen-label="13 Trust">
       <div className="trust-bg" aria-hidden="true" style={{ background: media.civic.fallback }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={media.civic.min} alt="" width={2752} height={1536} loading="lazy" />
+        <Photo local={media.civic.local} cdn={media.civic.cdn} alt="" width={2752} height={1536} />
       </div>
       <div className="shell">
         <div className="trust-inner">

@@ -1,6 +1,7 @@
 import ApplicantDashboard from "@/components/dashboards/ApplicantDashboard";
 import { Icon } from "@/components/Icons";
 import { media } from "@/lib/media";
+import { Photo } from "@/components/Photo";
 
 export default function ApplicantSection() {
   return (
@@ -21,8 +22,13 @@ export default function ApplicantSection() {
         </div>
         <figure className="media-frame section-media">
           <div className="media-fallback" style={{ background: media.applicant.fallback }} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={media.applicant.min} alt={media.applicant.alt} width={2400} height={1792} loading="lazy" />
+          <Photo
+            local={media.applicant.local}
+            cdn={media.applicant.cdn}
+            alt={media.applicant.alt}
+            width={2400}
+            height={1792}
+          />
           <div className="media-scrim" aria-hidden="true" />
           <figcaption className="media-chip">
             <Icon.CheckCircle />
