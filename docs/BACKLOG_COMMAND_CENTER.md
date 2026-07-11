@@ -54,15 +54,41 @@ app's global styles.
 - Integration is described as an **NC FAST-compatible intake layer
   (integration-ready architecture)** — no live NC FAST integration is claimed.
 
+## Persistence (Supabase)
+
+The backlog persists to Postgres when Supabase is configured for a signed-in
+agency user, and falls back to the localStorage demo otherwise. Two migrations
+under `supabase/migrations/`:
+
+- `0001_backlog_command_center.sql` — the `bk_*` tables (counties, workers,
+  cases, case documents + events, notes, audit), initially owner-scoped.
+- `0002_backlog_org_scope.sql` — **org-scoped sharing**: a self-contained
+  `bk_organizations` / `bk_org_members` model so a whole county DSS team shares
+  one backlog. Every owned row's `org_id` defaults to the caller's org via
+  `bk_ensure_org()`, so inserts auto-provision + stamp the org (no app-code
+  change). RLS on every owned table is `org_id is not null and bk_is_member(org_id)`.
+
+Both migrations are **applied and verified** on the `snap-ai` Supabase project
+(`pdtonyrjdmilidwehibk`). Org isolation + team sharing were proven with a
+two-user RLS test (a different-org user sees 0 rows; after joining the org they
+see the shared case).
+
+## Making the deployed preview run in Live mode
+
+The branch preview currently runs in **Demo** mode because the preview
+deployment has no Supabase env vars (that's why any-password demo login works).
+To flip a deployment to Live: set `NEXT_PUBLIC_SUPABASE_URL` +
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` on that deployment's environment and redeploy.
+Note that enabling real Supabase auth replaces the demo login with real
+sign-in, and the app's base schema (`profiles`, etc.) must exist for the rest
+of the app to function.
+
 ## Known gaps / next steps
 
-- **Persistence is browser-local** for the demo. Productionizing means mapping
-  the `lib/backlog` model onto the existing Supabase schema (`clients`,
-  `snap_cases`, `checklist_items`, `documents`, `deadlines`) + `log_audit` RPC,
-  and moving mutations into server actions with RLS.
 - Alerts are in-app only (no email/SMS yet).
 - Reports export via browser print-to-PDF (no server-rendered PDF yet).
-- Role selector is a demo affordance; real RBAC should derive from
-  `profiles.user_type`.
+- Role selector is a demo affordance; production RBAC can map the
+  `bk_org_members.role` to the in-app role.
 - No automated tests yet (repo has no test runner configured); verified via
-  `next build` typecheck + a headless-browser smoke test of all routes.
+  `next build` typecheck, a headless-browser smoke test of all routes, and a
+  live RLS test for the org policies.
