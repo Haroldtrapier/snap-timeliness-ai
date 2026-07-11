@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google";
 import { getLocale } from "@/lib/i18n";
 import { localeDir } from "@/lib/i18n/config";
+import { ogImage } from "@/lib/media";
 import "./globals.css";
 
 // Self-hosted at build time via next/font (no CDN / external font requests).
@@ -47,6 +48,21 @@ export const metadata: Metadata = {
       "Document checklists, plain-language notice explanations, deadline reminders, and human-in-the-loop agency workflow support for SNAP.",
     siteName: "SNAP AI",
     type: "website",
+    images: [
+      {
+        url: ogImage,
+        width: 2752,
+        height: 1536,
+        alt: "SNAP AI — preparing families for a complete, on-time SNAP application.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SNAP AI — AI support for every step of the SNAP process",
+    description:
+      "Document checklists, plain-language notice explanations, deadline reminders, and human-in-the-loop agency workflow support for SNAP.",
+    images: [ogImage],
   },
   robots: { index: true, follow: true },
 };

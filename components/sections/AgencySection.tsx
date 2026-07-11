@@ -1,4 +1,7 @@
 import AgencyDashboard from "@/components/dashboards/AgencyDashboard";
+import { Icon } from "@/components/Icons";
+import { media } from "@/lib/media";
+import { Photo } from "@/components/Photo";
 
 export default function AgencySection() {
   return (
@@ -17,6 +20,21 @@ export default function AgencySection() {
             view. Built with caseworkers, navigators, and county DSS leadership.
           </p>
         </div>
+        <figure className="media-frame section-media">
+          <div className="media-fallback" style={{ background: media.agency.fallback }} />
+          <Photo
+            local={media.agency.local}
+            cdn={media.agency.cdn}
+            alt={media.agency.alt}
+            width={2400}
+            height={1792}
+          />
+          <div className="media-scrim" aria-hidden="true" />
+          <figcaption className="media-chip">
+            <Icon.ShieldCheck />
+            Human-in-the-loop · caseworkers always decide
+          </figcaption>
+        </figure>
         <AgencyDashboard />
       </div>
     </section>
