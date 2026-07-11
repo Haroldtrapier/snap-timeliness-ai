@@ -1,5 +1,6 @@
 import { Icon } from "@/components/Icons";
 import { getMessages } from "@/lib/i18n";
+import { media } from "@/lib/media";
 
 export default async function Hero() {
   const m = await getMessages();
@@ -33,6 +34,17 @@ export default async function Hero() {
             </div>
           </div>
         </div>
+
+        <figure className="media-frame hero-media">
+          <div className="media-fallback" style={{ background: media.hero.fallback }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={media.hero.src} alt={media.hero.alt} width={2752} height={1536} />
+          <div className="media-scrim" aria-hidden="true" />
+          <figcaption className="media-chip">
+            <Icon.Sprout />
+            Preparing families for a complete, on-time SNAP application
+          </figcaption>
+        </figure>
 
         <div className="hero-proof">
           <div className="proof-card">

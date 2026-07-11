@@ -80,6 +80,17 @@ auth-scoped data source.
   calendar) is **fictional/illustrative**. Replace the `lib/data.ts` models and the
   dashboards with real, auth-gated services before any production use.
 
+### Marketing imagery
+
+The landing page uses four editorial photographs (hero food-distribution scene,
+applicant kitchen table, caseworker workspace, and a civic-building trust band).
+They were generated with **Higgsfield** and are referenced from a central manifest
+in [`lib/media.ts`](lib/media.ts), which pairs each image with a CSS gradient
+**fallback** so every media surface still reads as intentional if an asset URL is
+unavailable. The shared `.media-frame` / `.trust-band` styles live at the bottom of
+`app/globals.css`. To fully self-host, download each `src` in `lib/media.ts` into
+`public/img/` and swap the URLs for local paths.
+
 ---
 
 ## 📋 What SNAP-AI Does

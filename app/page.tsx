@@ -14,6 +14,7 @@ import HITLSection from "@/components/sections/HITLSection";
 import SecuritySection from "@/components/sections/SecuritySection";
 import PilotSection from "@/components/sections/PilotSection";
 import MetricsSection from "@/components/sections/MetricsSection";
+import TrustBand from "@/components/sections/TrustBand";
 import FAQ from "@/components/sections/FAQ";
 import FinalCTA from "@/components/sections/FinalCTA";
 
@@ -36,6 +37,7 @@ export default function Home() {
         <SecuritySection />
         <PilotSection />
         <MetricsSection />
+        <TrustBand />
         <FAQ />
         <FinalCTA />
       </main>
