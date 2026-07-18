@@ -58,11 +58,18 @@ lib/
 
 ### Authentication & data (current state)
 
-The authenticated product area under `/app` is real and navigable, but uses a
-**demo session** (`lib/auth.ts`): sign-in accepts any email with no password and
-sets an unsigned cookie. This is a scaffold, not production auth. Replace it with a
-real identity provider (Supabase Auth, Auth.js, or SSO/SAML for agency staff) — the
-route guards call only `getSession()` and the cookie name, so the swap is localized.
+The authenticated product area under `/app` runs in one of two modes
+(`lib/auth.ts`, gated by `isSupabaseConfigured`):
+
+- **Configured** — when the Supabase env vars are set, the app uses **real
+  Supabase Auth** (email/password sign-up/in/out) and reads/writes the real,
+  RLS-scoped Postgres tables. Profiles are provisioned on first visit.
+- **Demo fallback** — with no Supabase env vars, sign-in accepts any email with
+  no password and sets an unsigned cookie so the site still runs off the
+  `lib/data.ts` fixtures. This path is a scaffold, not production auth.
+
+For a government deployment, still add SSO/SAML + MFA for agency staff. The route
+guards call only `getSession()` and the cookie name, so that swap stays localized.
 
 Likewise, `lib/repositories.ts` resolves the in-memory fixtures from `lib/data.ts`
 behind async functions. When Supabase is configured these read the real,
