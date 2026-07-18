@@ -65,8 +65,18 @@ real identity provider (Supabase Auth, Auth.js, or SSO/SAML for agency staff) â€
 route guards call only `getSession()` and the cookie name, so the swap is localized.
 
 Likewise, `lib/repositories.ts` resolves the in-memory fixtures from `lib/data.ts`
-behind async functions. Each is an integration point for a real, per-user,
-auth-scoped data source.
+behind async functions. When Supabase is configured these read the real,
+per-user, RLS-scoped tables and only fall back to the fixtures when unconfigured
+or empty.
+
+### Database schema
+
+The Supabase schema the app depends on (tables, enums, RLS policies, the RPCs,
+and the `snap-documents` storage bucket) is version-controlled under
+[`supabase/migrations/`](supabase/README.md). Apply it with `supabase db push`
+(or paste the files into the SQL editor in filename order), then set the
+Supabase env vars from `.env.example` to switch the app from demo fixtures to
+the real backend.
 
 ### Notes for production
 

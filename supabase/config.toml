@@ -1,0 +1,8 @@
+# Minimal Supabase CLI config so `supabase link` + `supabase db push` picks up
+# the migrations in ./migrations. Set project_id to your project ref (or run
+# `supabase link --project-ref <ref>`), then `supabase db push`.
+project_id = "snap-timeliness-ai"
+
+[db]
+# Postgres major version of the linked project. Adjust if your project differs.
+major_version = 15
