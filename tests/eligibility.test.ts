@@ -25,7 +25,7 @@ const TEST_POLICY: Policy = {
   standardDeductionCents: [0, $(100), $(100), $(100), $(100)],
   medicalDeductionThresholdCents: $(35),
   maxExcessShelterDeductionCents: $(500),
-  standardUtilityAllowanceCents: $(50),
+  standardUtilityAllowanceCents: [0, $(50)],
   maxAllotmentCents: [0, $(300), $(500), $(700), $(900)],
   perAdditionalAllotmentCents: $(200),
   minBenefitCents: $(23),
@@ -250,5 +250,77 @@ describe("real FY2026 contiguous policy sanity", () => {
     const r = calculateEligibility(input({ householdSize: 1 }), p);
     expect(r.likelyEligible).toBe(true);
     expect(r.estimatedMonthlyBenefitCents).toBe(maxAllotmentCents(p, 1));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Golden tests — real FY2026 policy vs. the PUBLISHED FNS tables.
+// If these fail after an annual COLA update, the policy constants are stale.
+// ---------------------------------------------------------------------------
+import { POLICIES } from "@/lib/eligibility/policy";
+import { incomeLimitCents, standardUtilityAllowanceCents as suaFor } from "@/lib/eligibility/engine";
+
+describe("FY2026 published-table golden tests", () => {
+  const p48 = POLICIES.contiguous;
+  const ak = POLICIES.alaska;
+  const hi = POLICIES.hawaii;
+
+  it("48-state gross limits (130% FPL) match the FNS FY2026 table", () => {
+    const published = [0, 1696, 2292, 2888, 3483, 4079, 4675, 5271, 5867];
+    for (let size = 1; size <= 8; size++) {
+      expect(incomeLimitCents(p48, size, 1.3)).toBe(published[size] * 100);
+    }
+  });
+
+  it("48-state net limits (100% FPL) match the FNS FY2026 table", () => {
+    const published = [0, 1305, 1763, 2221, 2680, 3138, 3596, 4055, 4513];
+    for (let size = 1; size <= 8; size++) {
+      expect(incomeLimitCents(p48, size, 1.0)).toBe(published[size] * 100);
+    }
+  });
+
+  it("Alaska and Hawaii size-1 limits match the FNS FY2026 table", () => {
+    expect(incomeLimitCents(ak, 1, 1.3)).toBe(2118_00);
+    expect(incomeLimitCents(ak, 1, 1.0)).toBe(1630_00);
+    expect(incomeLimitCents(hi, 1, 1.3)).toBe(1949_00);
+    expect(incomeLimitCents(hi, 1, 1.0)).toBe(1500_00);
+  });
+
+  it("NC BBCE 200% limit for size 1 is $2,610 (2 × published net limit)", () => {
+    const r = calculateEligibility(
+      input({ householdSize: 1, unearnedIncomeCents: 2610_00 }),
+      p48,
+    );
+    expect(r.categoricallyEligible).toBe(true);
+    const over = calculateEligibility(
+      input({ householdSize: 1, unearnedIncomeCents: 2610_01 }),
+      p48,
+    );
+    expect(over.categoricallyEligible).toBe(false);
+  });
+
+  it("max allotments match the FNS FY2026 table (incl. 8+ extension)", () => {
+    expect(maxAllotmentCents(p48, 1)).toBe(298_00);
+    expect(maxAllotmentCents(p48, 4)).toBe(994_00);
+    expect(maxAllotmentCents(p48, 8)).toBe(1789_00);
+    expect(maxAllotmentCents(p48, 9)).toBe(1789_00 + 218_00);
+    expect(maxAllotmentCents(ak, 4)).toBe(1285_00);
+    expect(maxAllotmentCents(hi, 4)).toBe(1689_00);
+  });
+
+  it("FY2026 minimum benefit is $24 (48 states)", () => {
+    const r = calculateEligibility(
+      input({ householdSize: 1, unearnedIncomeCents: 1159_00 }),
+      p48,
+    );
+    // net = 1159.00 − 209 std = 950.00; raw benefit = 298 − 285 = 13 → floored at $24.
+    expect(r.likelyEligible).toBe(true);
+    expect(r.estimatedMonthlyBenefitCents).toBe(24_00);
+  });
+
+  it("NC SUA varies by household size and repeats past size 5", () => {
+    expect(suaFor(p48, 1)).toBe(637_00);
+    expect(suaFor(p48, 5)).toBe(912_00);
+    expect(suaFor(p48, 9)).toBe(912_00);
   });
 });

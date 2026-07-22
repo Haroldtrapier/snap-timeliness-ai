@@ -96,7 +96,10 @@ export interface Policy {
   standardDeductionCents: number[];
   medicalDeductionThresholdCents: number; // $35 → 3500
   maxExcessShelterDeductionCents: number;
-  standardUtilityAllowanceCents: number; // state-specific in reality
+  /** State heating/cooling Standard Utility Allowance by household size
+   *  (index 1..N; sizes past the last entry reuse the last). Some states
+   *  (e.g. NC) vary the SUA by household size. */
+  standardUtilityAllowanceCents: number[];
 
   /** Max monthly allotment by household size (index 1..8). */
   maxAllotmentCents: number[];

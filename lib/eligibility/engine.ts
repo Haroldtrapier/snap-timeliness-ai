@@ -16,6 +16,25 @@ export function monthlyPovertyCents(policy: Policy, size: number): number {
   return Math.round(annual / 12);
 }
 
+/**
+ * Monthly income limit (cents) per FNS derivation: annual poverty × factor,
+ * divided by 12, rounded UP to the next whole dollar. Matches the published
+ * FY2026 Income Eligibility Standards tables exactly (e.g. 48-state size-1
+ * net $1,305, gross $1,696).
+ */
+export function incomeLimitCents(policy: Policy, size: number, factor: number): number {
+  const annual =
+    policy.povertyAnnualBaseCents + Math.max(0, size - 1) * policy.povertyAnnualPerAdditionalCents;
+  return Math.ceil((annual * factor) / 1200) * 100;
+}
+
+/** Heating/cooling SUA (cents) for a household size (last bracket repeats). */
+export function standardUtilityAllowanceCents(policy: Policy, size: number): number {
+  const table = policy.standardUtilityAllowanceCents;
+  const idx = Math.min(size, table.length - 1);
+  return table[idx] ?? 0;
+}
+
 /** Max monthly allotment (cents) for a household size, extending past the table. */
 export function maxAllotmentCents(policy: Policy, size: number): number {
   const table = policy.maxAllotmentCents;
@@ -48,9 +67,8 @@ export function calculateEligibility(
   const unearned = Math.max(0, input.unearnedIncomeCents || 0);
   const grossIncome = earned + unearned;
 
-  const povertyMonthly = monthlyPovertyCents(policy, size);
-  const grossLimit = Math.round(povertyMonthly * policy.grossIncomeLimitFactor);
-  const netLimit = Math.round(povertyMonthly * policy.netIncomeLimitFactor);
+  const grossLimit = incomeLimitCents(policy, size, policy.grossIncomeLimitFactor);
+  const netLimit = incomeLimitCents(policy, size, policy.netIncomeLimitFactor);
 
   trace.push({
     step: "income",
@@ -62,7 +80,7 @@ export function calculateEligibility(
   // --- Categorical eligibility (BBCE / receives qualifying benefit) ---
   const bbceLimit =
     policy.bbceGrossLimitFactor != null
-      ? Math.round(povertyMonthly * policy.bbceGrossLimitFactor)
+      ? Math.round((netLimit * policy.bbceGrossLimitFactor) / policy.netIncomeLimitFactor)
       : null;
   const categoricallyEligible =
     Boolean(input.receivesQualifyingBenefit) ||
@@ -112,7 +130,7 @@ export function calculateEligibility(
 
   // --- Excess shelter deduction ---
   const utilities = input.useStandardUtilityAllowance
-    ? policy.standardUtilityAllowanceCents
+    ? standardUtilityAllowanceCents(policy, size)
     : Math.max(0, input.utilitiesCents || 0);
   const shelterCost = Math.max(0, input.rentMortgageCents || 0) + utilities;
   const halfAdjusted = Math.round(adjustedIncome / 2);
