@@ -398,6 +398,9 @@ export interface QueueClient {
   name: string;
   location: string;
   documents: QueueDocument[];
+  /** Latest pre-screen signals (null when the applicant hasn't run one). */
+  expedited: boolean | null;
+  likelyEligible: boolean | null;
 }
 
 function relValue<T>(rel: T | T[] | null): T | null {
@@ -440,6 +443,8 @@ export async function getCaseworkerQueue(userId?: string): Promise<QueueClient[]
           name: client?.full_name ?? "Applicant",
           location: loc,
           documents: [],
+          expedited: null,
+          likelyEligible: null,
         });
       }
       byClient.get(d.client_id)!.documents.push({
@@ -453,7 +458,30 @@ export async function getCaseworkerQueue(userId?: string): Promise<QueueClient[]
       });
     });
 
-    return [...byClient.values()];
+    // Attach the latest pre-screen signals per client and sort: households
+    // flagged for 7-day expedited processing first (7 CFR 273.2(i)), then
+    // likely-eligible, then oldest upload first (the existing order).
+    const clientIds = [...byClient.keys()];
+    if (clientIds.length > 0) {
+      const { data: estimates } = await supabase
+        .from("eligibility_estimates")
+        .select("client_id, expedited, likely_eligible, computed_at")
+        .in("client_id", clientIds)
+        .order("computed_at", { ascending: false });
+      const seen = new Set<string>();
+      (estimates ?? []).forEach((e) => {
+        if (seen.has(e.client_id)) return; // keep only the latest per client
+        seen.add(e.client_id);
+        const q = byClient.get(e.client_id);
+        if (q) {
+          q.expedited = e.expedited;
+          q.likelyEligible = e.likely_eligible;
+        }
+      });
+    }
+
+    const rank = (q: QueueClient) => (q.expedited ? 0 : q.likelyEligible ? 1 : 2);
+    return [...byClient.values()].sort((a, b) => rank(a) - rank(b));
   } catch {
     return [];
   }

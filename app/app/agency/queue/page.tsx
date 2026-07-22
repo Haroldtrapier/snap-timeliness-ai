@@ -98,7 +98,31 @@ export default async function ReviewQueuePage({
                     .join("")}
                 </div>
                 <div>
-                  <div className="queue-client-name">{client.name}</div>
+                  <div className="queue-client-name">
+                    {client.name}
+                    {client.expedited && (
+                      <span
+                        className="pill"
+                        style={{
+                          marginLeft: 8,
+                          background: "var(--warn-bg, #fef3c7)",
+                          color: "var(--warn-ink, #92400e)",
+                        }}
+                        title="Pre-screen indicates 7-day expedited processing (7 CFR 273.2(i))"
+                      >
+                        Expedited
+                      </span>
+                    )}
+                    {client.expedited === false && client.likelyEligible && (
+                      <span
+                        className="pill"
+                        style={{ marginLeft: 8 }}
+                        title="Pre-screen indicates the household is likely eligible"
+                      >
+                        Likely eligible
+                      </span>
+                    )}
+                  </div>
                   {client.location && <div className="queue-client-loc mono">{client.location}</div>}
                 </div>
               </div>
